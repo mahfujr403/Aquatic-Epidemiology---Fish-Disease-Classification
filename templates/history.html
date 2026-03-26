@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Prediction History{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Your Predictions</h2>
+  {% if items %}
+    <ul>
+    {% for it in items %}
+      <li>
+        <img src="/{{ it.image_path }}" alt="img" style="height:80px;" />
+        <strong>{{ it.predicted_class }}</strong> — {{ '%.2f' % (it.confidence*100) }}%
+        <form method="post" action="{{ url_for('submit_feedback') }}">
+          <input type="hidden" name="prediction_id" value="{{ it.id }}" />
+          <label>
+            Was this correct?
+            <select name="is_corrected">
+              <option value="false">Yes</option>
+              <option value="true">No</option>
+            </select>
+          </label>
+          <label>Correct label (if wrong): <input name="corrected_label" /></label>
+          <label>Note: <input name="note" /></label>
+          <button type="submit">Send feedback</button>
+        </form>
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>No history yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

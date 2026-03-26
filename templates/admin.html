@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Admin Panel</h2>
+
+  <h3>Feedback</h3>
+  <div style="margin-bottom:8px">
+    <strong>Filter:</strong>
+    <a href="{{ url_for('admin_panel') }}" {% if status=='all' %}style="font-weight:bold"{% endif %}>All</a>
+    |
+    <a href="{{ url_for('admin_panel', status='correct') }}" {% if status=='correct' %}style="font-weight:bold"{% endif %}>Correct</a>
+    |
+    <a href="{{ url_for('admin_panel', status='wrong') }}" {% if status=='wrong' %}style="font-weight:bold"{% endif %}>Wrong</a>
+  </div>
+  {% if feedback_items %}
+    <ul>
+    {% for fb in feedback_items %}
+      <li style="margin-bottom:12px;border-bottom:1px solid #eee;padding-bottom:8px;">
+        {% if fb.prediction %}
+          <img src="/{{ fb.prediction.image_path }}" style="height:80px;vertical-align:middle;margin-right:8px;" />
+        {% endif %}
+        <div style="display:inline-block;vertical-align:middle;max-width:70%">
+          <div><strong>Pred:</strong> {{ fb.prediction.predicted_class if fb.prediction else 'N/A' }} — <strong>Corrected:</strong> {{ fb.corrected_label }}</div>
+          <div style="color:#666;">Submitted by user id {{ fb.user_id }} on {{ fb.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+          <p>{{ fb.note }}</p>
+        </div>
+        <div style="float:right">
+          {% if not fb.handled %}
+            <form method="post" action="{{ url_for('approve_feedback', feedback_id=fb.id) }}" style="display:inline-block;">
+              <input name="split" value="train" hidden />
+              <button type="submit">Approve</button>
+            </form>
+            <form method="post" action="{{ url_for('reject_feedback', feedback_id=fb.id) }}" style="display:inline-block;">
+              <button type="submit">Reject</button>
+            </form>
+          {% else %}
+            <em>Handled</em>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>No feedback items.</p>
+  {% endif %}
+
+  <!-- Admin view restricted to feedback only -->
+</div>
+{% endblock %}

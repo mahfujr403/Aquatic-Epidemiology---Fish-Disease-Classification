@@ -9,16 +9,13 @@
         .container { max-width: 600px; margin: auto; }
         button { background: #4CAF50; color: white; padding: 15px 30px; border: none; cursor: pointer; border-radius: 5px; font-size: 16px; }
         button:hover { background: #45a049; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Fish Disease Classification</h1>
-        <p>Welcome to the Fish Disease Classification application.</p>
-        <p>Click the button below to upload an image of a fish and classify its disease.</p>
-        <form action="/predict" method="GET">
-            <button type="submit">Classify Disease</button>
-        </form>
-    </div>
-</body>
+    {% extends "base.html" %}
+    {% block title %}Home{% endblock %}
+    {% block content %}
+        <div style="text-align:center; padding:40px;">
+            <h1>Fish Disease Classifier</h1>
+            <p>Upload an image of a fish to classify common diseases.</p>
+            <a href="{{ url_for('predict_get') }}" style="display:inline-block;background:#0b5;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;">Classify disease</a>
+        </div>
+    {% endblock %}
 </html>
