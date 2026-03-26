@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Disease Classification</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
+        .container { max-width: 600px; margin: auto; }
+        button { background: #4CAF50; color: white; padding: 15px 30px; border: none; cursor: pointer; border-radius: 5px; font-size: 16px; }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fish Disease Classification</h1>
+        <p>Welcome to the Fish Disease Classification application.</p>
+        <p>Click the button below to upload an image of a fish and classify its disease.</p>
+        <form action="/predict" method="GET">
+            <button type="submit">Classify Disease</button>
+        </form>
+    </div>
+</body>
+</html>

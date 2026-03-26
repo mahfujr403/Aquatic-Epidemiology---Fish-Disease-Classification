@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Disease Classification</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; background: #f5f5f5; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        form { background: #f0f0f0; padding: 20px; border-radius: 5px; margin: 20px 0; }
+        input[type="file"] { padding: 10px; margin: 10px 0; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-size: 16px; }
+        button:hover { background: #45a049; }
+        .result { background: #e8f5e9; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 5px solid #4CAF50; }
+        .error { background: #ffebee; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 5px solid #f44336; color: #c62828; }
+        .disease-name { font-size: 24px; font-weight: bold; color: #2e7d32; }
+        .confidence { font-size: 18px; color: #555; margin-top: 10px; }
+        a { color: #4CAF50; text-decoration: none; margin-top: 20px; display: inline-block; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fish Disease Classification</h1>
+        
+        {% if error %}
+            <div class="error">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+        
+        {% if success %}
+            <div class="result">
+                <h2>Classification Result</h2>
+                <div class="disease-name">{{ disease }}</div>
+                <div class="confidence">Confidence: {{ confidence }}</div>
+            </div>
+        {% endif %}
+        
+        <form action="/predict" method="POST" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*" required>
+            <button type="submit">Upload and Classify</button>
+        </form>
+        
+        <p><a href="/">Back to Home</a></p>
+    </div>
+</body>
+</html>
