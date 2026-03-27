@@ -1,21 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fish Disease Classification</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
-        .container { max-width: 600px; margin: auto; }
-        button { background: #4CAF50; color: white; padding: 15px 30px; border: none; cursor: pointer; border-radius: 5px; font-size: 16px; }
-        button:hover { background: #45a049; }
-    {% extends "base.html" %}
-    {% block title %}Home{% endblock %}
-    {% block content %}
-        <div style="text-align:center; padding:40px;">
-            <h1>Fish Disease Classifier</h1>
-            <p>Upload an image of a fish to classify common diseases.</p>
-            <a href="{{ url_for('predict_get') }}" style="display:inline-block;background:#0b5;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;">Classify disease</a>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AquaDiag — Fish Disease Classification</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../static/css/index.css" />
+</head>
+
+<body>
+
+    <!-- NAV -->
+    <nav class="navbar">
+        <a class="nav-logo" href="#">Aqua<span>Diag</span></a>
+
+        <div class="menu-toggle" id="menuToggle">☰</div>
+
+        <div class="nav-links" id="navLinks">
+            <a href="#features">Features</a>
+            <a href="#how">How It Works</a>
+            <a href="#about">About</a>
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('register') }}" class="btn-nav">Get Started</a>
         </div>
-    {% endblock %}
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="circle c1"></div>
+            <div class="circle c2"></div>
+            <div class="circle c3"></div>
+        </div>
+
+        <div class="hero-eyebrow">
+            <span class="dot"></span>
+            AI-Powered Fish Health Diagnostics
+        </div>
+
+        <h1>Detect Fish Diseases<br /><em>Instantly & Accurately</em></h1>
+
+        <p class="hero-sub">
+            Upload a photo of your fish — our deep learning model identifies diseases in seconds,
+            helping farmers and aquaculture professionals act before losses occur.
+        </p>
+
+        <div class="hero-cta">
+            <a href="{{ url_for('register') }}" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M12 5v14M5 12l7 7 7-7" />
+                </svg>
+                Start Diagnosing — Free
+            </a>
+            <a href="#how" class="btn-outline">
+                How It Works
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </a>
+        </div>
+
+        <div class="hero-stats">
+            <div class="stat-item">
+                <div class="stat-number">7</div>
+                <div class="stat-label">Disease Classes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Model Architectures</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">224px</div>
+                <div class="stat-label">Input Resolution</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">&lt;2s</div>
+                <div class="stat-label">Prediction Time</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" style="padding: 100px 6vw;">
+        <div class="about-grid">
+            <div>
+                <p class="section-label reveal">About the Project</p>
+                <h2 class="section-title reveal reveal-delay-1">Smart Diagnostics for <em>Aquaculture</em></h2>
+                <p class="section-body reveal reveal-delay-2">
+                    AquaDiag uses an advanced deep learning pipeline with feature fusion and a custom classification
+                    head, where multiple models extract complementary features that are combined before final prediction
+                    for higher accuracy. Designed for fish farmers, aquaculture researchers, and veterinary
+                    professionals, it delivers fast and reliable diagnosis without expensive lab testing.
+
+                </p>
+                <p class="section-body reveal reveal-delay-3" style="margin-top: 16px;">
+                    Users can upload images, receive instant diagnoses, and submit feedback to continuously
+                    improve model accuracy — creating a self-improving diagnostic ecosystem.
+                </p>
+            </div>
+
+            <div class="about-visual reveal reveal-delay-2">
+                <span class="fish-icon">🐟</span>
+                <p>"From a single photograph to a confident diagnosis in less than two seconds."</p>
+                <div class="model-badge">Custom Classification Head</div>
+                <div class="model-badge">Ensemble & Feature Fusion</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- DISEASES -->
+    <section id="diseases" class="diseases-section">
+        <div class="diseases-header">
+            <p class="section-label reveal">Disease Detection</p>
+            <h2 class="section-title reveal reveal-delay-1">7 Conditions <em>Identified</em></h2>
+            <p class="section-body reveal reveal-delay-2">
+                Our model is trained to recognize the most common and economically significant fish diseases,
+                including healthy baseline classification.
+            </p>
+        </div>
+
+        <div class="diseases-grid">
+
+            <div class="disease-card reveal reveal-delay-1">
+                <span class="disease-icon">🔴</span>
+                <span class="disease-type type-bacterial">Bacterial</span>
+                <div class="disease-name">Bacterial Red Disease</div>
+                <p class="disease-desc">Causes hemorrhagic lesions and reddening of skin and fins. Highly contagious in
+                    pond environments with poor water quality.</p>
+            </div>
+
+            <div class="disease-card reveal reveal-delay-2">
+                <span class="disease-icon">🦠</span>
+                <span class="disease-type type-bacterial">Bacterial</span>
+                <div class="disease-name">Aeromoniasis</div>
+                <p class="disease-desc">Caused by <em>Aeromonas</em> bacteria — presents as ulcers, dropsy, and internal
+                    hemorrhaging. Common in freshwater species.</p>
+            </div>
+
+            <div class="disease-card reveal reveal-delay-3">
+                <span class="disease-icon">🫁</span>
+                <span class="disease-type type-bacterial">Bacterial</span>
+                <div class="disease-name">Bacterial Gill Disease</div>
+                <p class="disease-desc">Infects gill tissue causing respiratory distress and reduced oxygen uptake.
+                    Often triggered by crowding and stress.</p>
+            </div>
+
+            <div class="disease-card reveal reveal-delay-4">
+                <span class="disease-icon">🍄</span>
+                <span class="disease-type type-fungal">Fungal</span>
+                <div class="disease-name">Saprolegniasis</div>
+                <p class="disease-desc">Fungal infection appearing as white cotton-like patches on skin or fins. Often
+                    secondary to wounds or bacterial infection.</p>
+            </div>
+
+            <div class="disease-card reveal reveal-delay-5">
+                <span class="disease-icon">🐛</span>
+                <span class="disease-type type-parasitic">Parasitic</span>
+                <div class="disease-name">Parasitic Diseases</div>
+                <p class="disease-desc">Includes ectoparasites and endoparasites causing lesions, fin damage, and
+                    behavioral changes. Detected by visual skin patterns.</p>
+            </div>
+
+            <div class="disease-card reveal reveal-delay-6">
+                <span class="disease-icon">⚡</span>
+                <span class="disease-type type-viral">Viral</span>
+                <div class="disease-name">White Tail Disease</div>
+                <p class="disease-desc">Viral disease causing white discoloration of the tail region. Spreads rapidly in
+                    dense aquaculture settings.</p>
+            </div>
+
+            <div class="disease-card reveal reveal-delay-1" style="grid-column: auto;">
+                <span class="disease-icon">✅</span>
+                <span class="disease-type type-healthy">Healthy</span>
+                <div class="disease-name">Healthy Fish</div>
+                <p class="disease-desc">Baseline classification for normal, disease-free fish — confirming good health
+                    and helping track improvement post-treatment.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how">
+        <div class="how-header">
+            <p class="section-label reveal">Process</p>
+            <h2 class="section-title reveal reveal-delay-1">Three Steps to <em>Diagnosis</em></h2>
+            <p class="section-body reveal reveal-delay-2">No lab equipment needed — just your smartphone and a clear
+                photo of the fish.</p>
+        </div>
+
+        <div class="steps">
+            <div class="step reveal reveal-delay-1">
+                <div class="step-num">1</div>
+                <div class="step-title">Upload a Photo</div>
+                <p class="step-desc">Take a clear photo of the fish showing its skin, fins, or affected area. Supports
+                    PNG, JPG, WEBP.</p>
+            </div>
+            <div class="step reveal reveal-delay-2">
+                <div class="step-num">2</div>
+                <div class="step-title">AI Analysis</div>
+                <p class="step-desc">Our ensemble model processes the image and returns a prediction with a confidence
+                    percentage in under 2 seconds.</p>
+            </div>
+            <div class="step reveal reveal-delay-3">
+                <div class="step-num">3</div>
+                <div class="step-title">Review & Act</div>
+                <p class="step-desc">See the disease name and confidence score. View your history, submit feedback, and
+                    improve the model over time.</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- FEATURES -->
+
+    <section id="features" class="features-section">
+        <div style="text-align:center; max-width:580px; margin:0 auto 0;">
+            <p class="section-label reveal">Platform Features</p>
+            <h2 class="section-title reveal reveal-delay-1">Built for <em>Real-World</em> Use</h2>
+        </div>
+
+        <div class="features-grid">
+
+
+            <div class="feature-card reveal reveal-delay-6" style="border-color: rgba(79,195,247,.2);">
+                <div class="feature-icon" style="background: rgba(79,195,247,.1);">🔀</div>
+                <div class="feature-title">Feature Fusion Architecture</div>
+                <p class="feature-desc">
+                    Multiple custom finetuned CNN models run in parallel, with their feature maps <strong
+                        style="color:var(--sky)">concatenated before the final classifier</strong> to combine spatial
+                    and channel features, improving accuracy beyond single models.
+                </p>
+            </div>
+
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon">🤖</div>
+                <div class="feature-title">Ensemble Deep Learning</div>
+                <p class="feature-desc">Powered by multiple custom CNN models and fused feature maps — combining the
+                    strengths of two state-of-the-art architectures for higher accuracy.</p>
+            </div>
+
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">Confidence Scoring</div>
+                <p class="feature-desc">Every prediction includes a percentage confidence score so you can gauge
+                    reliability and make informed decisions.</p>
+            </div>
+
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon">🕘</div>
+                <div class="feature-title">Prediction History</div>
+                <p class="feature-desc">Your full diagnosis history is saved — review past predictions, track patterns,
+                    and monitor fish health over time.</p>
+            </div>
+
+            <div class="feature-card reveal reveal-delay-4">
+                <div class="feature-icon">💬</div>
+                <div class="feature-title">User Feedback System</div>
+                <p class="feature-desc">Spot a wrong prediction? Submit a correction. Feedback is reviewed by admins and
+                    used to improve future model training.</p>
+            </div>
+
+            <div class="feature-card reveal reveal-delay-5">
+                <div class="feature-icon">🔐</div>
+                <div class="feature-title">Secure Authentication</div>
+                <p class="feature-desc">Password-hashed user accounts with role-based access. Separate admin login for
+                    dataset and feedback management.</p>
+            </div>
+
+
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="cta-inner reveal">
+            <h2>Ready to Diagnose Your Fish?</h2>
+            <p>Create a free account in seconds. No credit card required.<br />Start protecting your aquaculture
+                investment today.</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('register') }}" class="btn-primary">
+                    Create Free Account
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </a>
+                <a href="{{ url_for('login') }}" class="btn-outline">Already have an account?</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    {% include 'footer.html' %}
+
+     <script src="../static/js/index.js"></script>
+
+</body>
 </html>
