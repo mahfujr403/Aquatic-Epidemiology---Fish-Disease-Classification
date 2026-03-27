@@ -98,10 +98,10 @@
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 </span>
-                <input class="field-input" id="username" name="username" type="text" placeholder="e.g. mahfujr403"
-                  required autocomplete="username" minlength="3" maxlength="30" />
+                <input class="field-input{% if errors and errors.get('username') %} error{% endif %}" id="username" name="username" type="text" placeholder="e.g. mahfujr403"
+                  required autocomplete="username" minlength="3" maxlength="30" value="{{ form_data.username|default('') }}" />
               </div>
-              <span class="field-hint" id="usernameHint">3–30 characters, letters and numbers.</span>
+              <span class="field-hint{% if errors and errors.get('username') %} visible err{% endif %}" id="usernameHint">{% if errors and errors.get('username') %}{{ errors.username }}{% else %}3–30 characters, letters and numbers.{% endif %}</span>
             </div>
 
             <!-- Email -->
@@ -114,9 +114,10 @@
                     <path d="M22 7l-10 7L2 7" />
                   </svg>
                 </span>
-                <input class="field-input" id="email" name="email" type="email" placeholder="mahfujr403@gmail.com" required
-                  autocomplete="email" />
+                <input class="field-input{% if errors and errors.get('email') %} error{% endif %}" id="email" name="email" type="email" placeholder="mahfujr403@gmail.com" required
+                  autocomplete="email" value="{{ form_data.email|default('') }}" />
               </div>
+              <span class="field-hint{% if errors and errors.get('email') %} visible err{% endif %}" id="emailHint">{% if errors and errors.get('email') %}{{ errors.email }}{% endif %}</span>
             </div>
 
             <!-- Password -->
@@ -129,9 +130,8 @@
                     <path d="M7 11V7a5 5 0 0110 0v4" />
                   </svg>
                 </span>
-                <input class="field-input" id="password" name="password" type="password"
-                  placeholder="Create a strong password" required autocomplete="new-password" minlength="8"
-                  id="passwordInput" />
+                <input class="field-input{% if errors and errors.get('password') %} error{% endif %}" id="password" name="password" type="password"
+                  placeholder="Create a strong password" required autocomplete="new-password" />
                 <button type="button" class="pw-toggle" id="pwToggle1" aria-label="Toggle password">
                   <svg id="eye1" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2">
@@ -159,7 +159,7 @@
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </span>
-                <input class="field-input" id="confirm_password" name="confirm_password" type="password"
+                <input class="field-input{% if errors and errors.get('confirm_password') %} error{% endif %}" id="confirm_password" name="confirm_password" type="password"
                   placeholder="Repeat your password" autocomplete="new-password" />
                 <button type="button" class="pw-toggle" id="pwToggle2" aria-label="Toggle confirm password">
                   <svg id="eye2" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -169,15 +169,16 @@
                   </svg>
                 </button>
               </div>
-              <span class="field-hint" id="matchHint"></span>
+              <span class="field-hint{% if errors and errors.get('confirm_password') %} visible err{% endif %}" id="matchHint">{% if errors and errors.get('confirm_password') %}{{ errors.confirm_password }}{% endif %}</span>
             </div>
 
             <!-- Terms -->
             <label class="terms-label">
-              <input type="checkbox" id="terms" required />
+              <input type="checkbox" id="terms" name="terms" required {% if form_data and form_data.get('terms') %}checked{% endif %} />
               I agree to the <a href="#">Terms of Service</a> and
               <a href="#">Privacy Policy</a>
             </label>
+            <span class="field-hint{% if errors and errors.get('terms') %} visible err{% endif %}" id="termsHint">{% if errors and errors.get('terms') %}{{ errors.terms }}{% endif %}</span>
 
             <!-- Submit -->
             <button type="submit" class="btn-submit" id="submitBtn">

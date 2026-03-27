@@ -36,6 +36,29 @@
         <p class="auth-subtitle">Sign in to access your fish disease dashboard and diagnosis history.</p>
 
         <form class="auth-form" method="post" action="{{ url_for('login') }}" id="loginForm" novalidate>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="flash-messages">
+                {# Modal: show first flashed message in a centered modal #}
+                {% set first = messages[0] %}
+                {% set category, msg = first %}
+                <div id="flashModal" class="modal" aria-hidden="true">
+                  <div class="modal-backdrop" data-action="close"></div>
+                  <div class="modal-content {{ category }}" role="dialog" aria-modal="true">
+                    <div class="modal-body">
+                      {% if category == 'error' %}
+                        <div class="modal-icon error">
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="16" r="1"/></svg>
+                        </div>
+                      {% endif %}
+                      <div class="modal-text">{{ msg }}</div>
+                    </div>
+                    <button class="modal-close" aria-label="Close message">OK</button>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endwith %}
 
           <!-- Email -->
           <div class="field-group">

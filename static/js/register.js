@@ -97,6 +97,7 @@
 
   /* ── Submit validation ── */
   document.getElementById('registerForm').addEventListener('submit', function(e) {
+
     let valid = true;
 
     const username = document.getElementById('username');
@@ -121,19 +122,10 @@
       showError(email, '⚠ Please enter a valid email address.'); valid = false;
     } else { clearError(email); }
 
-    // Password
-    if (!pass.value) {
-      showError(pass, '⚠ Password is required.'); valid = false;
-    } else if (pass.value.length < 8) {
-      showError(pass, '⚠ Password must be at least 8 characters.'); valid = false;
-    } else { clearError(pass); }
-
-    // Confirm password
-    if (!conf.value) {
-      showError(conf, '⚠ Please confirm your password.'); valid = false;
-    } else if (conf.value !== pass.value) {
-      showError(conf, '⚠ Passwords do not match.'); valid = false;
-    } else { clearError(conf); }
+    // Password and confirm: no client-side validation — accept any password
+    // (leave strength meter as informational only)
+    clearError(passwordInput);
+    clearError(confirmInput);
 
     // Terms
     if (!terms.checked) {
@@ -141,11 +133,10 @@
       termsHint.className = 'field-hint visible err';
       valid = false;
     }
-
+    
+   
     if (!valid) { e.preventDefault(); return; }
 
     const btn = document.getElementById('submitBtn');
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Creating account…';
-    btn.disabled = true;
   });
-</script>

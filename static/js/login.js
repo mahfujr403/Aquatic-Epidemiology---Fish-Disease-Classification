@@ -34,3 +34,15 @@
     btn.style.opacity = '.8';
     btn.disabled = true;
   });
+
+  // Show flash modal if present
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('flashModal');
+    if (!modal) return;
+    // open modal
+    modal.classList.add('open');
+    // close handlers
+    modal.querySelectorAll('[data-action="close"]').forEach(el => el.addEventListener('click', () => modal.remove()));
+    const closeBtn = modal.querySelector('.modal-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => modal.remove());
+  });

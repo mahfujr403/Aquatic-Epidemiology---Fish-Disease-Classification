@@ -499,13 +499,47 @@ body::before {
 }
 
 /* ── Flash messages override (styled for dark theme) ── */
-#flashMessages .flash {
-    background: rgba(15, 30, 48, .9) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--white) !important;
-    border-radius: 10px !important;
-    font-family: 'DM Sans', sans-serif;
-    font-size: .85rem;
+/* Modal for flash messages */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal.open { display: flex; }
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2,6,12,.6);
+    backdrop-filter: blur(6px);
+}
+.modal-content {
+    position: relative;
+    z-index: 1001;
+    width: 92%;
+    max-width: 520px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.6);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.modal-content .modal-icon svg { stroke: var(--error); }
+.modal-content .modal-text { color: var(--white); font-size: .98rem; }
+.modal-content.error { border-color: rgba(255,107,107,.12); background: rgba(255,107,107,.03); }
+.modal-close {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,.06);
+    color: var(--white);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 /* ── Responsive ── */

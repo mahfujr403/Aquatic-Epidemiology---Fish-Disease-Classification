@@ -12,6 +12,7 @@ from flask import (
     flash,
     jsonify,
 )
+import re
 from flask_cors import CORS
 from dotenv import load_dotenv
 
@@ -71,6 +72,7 @@ from flask_login import (
     current_user,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from tensorflow.keras.models import load_model
@@ -244,27 +246,79 @@ def index():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
+        # Collect form fields
+        form = {
+            "email": request.form.get("email", "").strip().lower(),
+            "username": request.form.get("username", "").strip(),
+            "password": request.form.get("password", ""),
+            "confirm_password": request.form.get("confirm_password", ""),
+            "terms": request.form.get("terms"),
+        }
 
-        if not email or not username or not password:
-            flash("All fields are required.", "error")
-            return redirect(url_for("register"))
+        errors = {}
 
-        if User.query.filter((User.email == email) | (User.username == username)).first():
-            flash("Email or username already exists.", "error")
-            return redirect(url_for("register"))
+        # Username validation
+        if not form["username"]:
+            errors["username"] = "⚠ Username is required."
+        elif len(form["username"]) < 3:
+            errors["username"] = "⚠ Username must be at least 3 characters."
+        elif len(form["username"]) > 30:
+            errors["username"] = "⚠ Username must be 30 characters or fewer."
+        elif not re.match(r"^[a-zA-Z0-9_]+$", form["username"]):
+            errors["username"] = "⚠ Only letters, numbers, and underscores allowed."
 
-        user = User(email=email, username=username, role="user")
-        user.set_password(password)
+        # Email validation
+        if not form["email"]:
+            errors["email"] = "⚠ Email address is required."
+        else:
+            # simple regex check
+            if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", form["email"]):
+                errors["email"] = "⚠ Please enter a valid email address."
+
+        # Collect password fields (password validation handled on client-side)
+        pw = form["password"] or ""
+        conf = form["confirm_password"] or ""
+
+        # Terms must be checked (checkbox sends 'on' when checked)
+        if form.get("terms") not in ("on", "true", "1"):
+            errors["terms"] = "⚠ You must agree to the Terms of Service to continue."
+
+        # Uniqueness checks
+        if "email" not in errors:
+            if User.query.filter_by(email=form["email"]).first():
+                errors["email"] = "⚠ Email already exists. Please log in or use another email."
+
+        if "username" not in errors:
+            if User.query.filter_by(username=form["username"]).first():
+                errors["username"] = "⚠ Username already taken. Choose another."
+
+        # If any errors, re-render form with inline error messages and preserved non-sensitive input
+        if errors:
+            return render_template("register.html", errors=errors, form_data={
+                "email": form["email"],
+                "username": form["username"],
+            })
+
+        # Passed validation — create user
+        user = User(email=form["email"], username=form["username"], role="user")
+        user.set_password(pw)
         db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            # handle rare race or DB constraint failures
+            errors["email"] = "⚠ Email already exists. Please log in or use another email."
+            return render_template("register.html", errors=errors, form_data={
+                "email": form["email"],
+                "username": form["username"],
+            })
 
         flash("Registration successful. Please log in.", "success")
         return redirect(url_for("login"))
 
-    return render_template("register.html")
+    # Ensure template always receives errors and form_data to avoid undefined variable errors
+    return render_template("register.html", errors={}, form_data={})
 
 
 @app.route("/login", methods=["GET", "POST"])
