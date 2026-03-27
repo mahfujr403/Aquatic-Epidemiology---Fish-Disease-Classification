@@ -1,23 +1,205 @@
-{% extends "base.html" %}
-{% block title %}Register{% endblock %}
-{% block content %}
-<div class="container">
-  <h2>Register</h2>
-  <form method="post" action="{{ url_for('register') }}">
-    <div>
-      <label for="username">Username</label>
-      <input id="username" name="username" type="text" required />
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - AquaDiag</title>
+  <link rel="stylesheet" href="../static/css/register.css" />
+</head>
+
+<body>
+  <div class="auth-bg">
+    <div class="circle c1"></div>
+    <div class="circle c2"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="auth-nav">
+    <a class="nav-logo" href="{{ url_for('index') }}">Aqua<span>Diag</span></a>
+    <a class="nav-back" href="{{ url_for('index') }}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+      </svg>
+      Back to Home
+    </a>
+  </nav>
+
+  <main class="auth-page">
+    <div class="auth-layout">
+      <!-- LEFT: pitch panel -->
+      <div class="auth-pitch">
+        <div class="auth-eyebrow"><span class="dot"></span> Free Forever</div>
+        <h1 class="pitch-title">
+          Start Diagnosing<br /><em>Fish Diseases</em><br />Today
+        </h1>
+        <p class="pitch-body">
+          Join aquaculture professionals and fish farmers using AI-powered
+          diagnostics to protect their stock — no lab equipment required.
+        </p>
+        <ul class="pitch-features">
+          <li>
+            <span class="check">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            Instant diagnosis — less than 2 seconds
+          </li>
+          <li>
+            <span class="check">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            7 disease classes including healthy baseline
+          </li>
+          <li>
+            <span class="check">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            Full prediction history & confidence scores
+          </li>
+          <li>
+            <span class="check">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            Feedback loop that improves the model
+          </li>
+          <li>
+            <span class="check">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            Ensemble deep learning architecture with custom classification head
+          </li>
+        </ul>
+      </div>
+
+      <!-- RIGHT: form card -->
+      <div>
+        <div class="auth-card">
+          <h2 class="card-title">Create <em>Account</em></h2>
+          <p class="card-subtitle">Free! No credit card needed.</p>
+
+          <form class="auth-form" method="post" action="{{ url_for('register') }}" id="registerForm" novalidate>
+            <!-- Username -->
+            <div class="field-group">
+              <label class="field-label" for="username">Username</label>
+              <div class="field-wrap">
+                <span class="field-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                <input class="field-input" id="username" name="username" type="text" placeholder="e.g. mahfujr403"
+                  required autocomplete="username" minlength="3" maxlength="30" />
+              </div>
+              <span class="field-hint" id="usernameHint">3–30 characters, letters and numbers.</span>
+            </div>
+
+            <!-- Email -->
+            <div class="field-group">
+              <label class="field-label" for="email">Email Address</label>
+              <div class="field-wrap">
+                <span class="field-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="M22 7l-10 7L2 7" />
+                  </svg>
+                </span>
+                <input class="field-input" id="email" name="email" type="email" placeholder="mahfujr403@gmail.com" required
+                  autocomplete="email" />
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div class="field-group">
+              <label class="field-label" for="password">Password</label>
+              <div class="field-wrap">
+                <span class="field-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0110 0v4" />
+                  </svg>
+                </span>
+                <input class="field-input" id="password" name="password" type="password"
+                  placeholder="Create a strong password" required autocomplete="new-password" minlength="8"
+                  id="passwordInput" />
+                <button type="button" class="pw-toggle" id="pwToggle1" aria-label="Toggle password">
+                  <svg id="eye1" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
+              <!-- Strength meter -->
+              <div class="strength-bar" id="strengthBar">
+                <div class="strength-seg" id="s1"></div>
+                <div class="strength-seg" id="s2"></div>
+                <div class="strength-seg" id="s3"></div>
+                <div class="strength-seg" id="s4"></div>
+              </div>
+              <div class="strength-label" id="strengthLabel"></div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="field-group">
+              <label class="field-label" for="confirm_password">Confirm Password</label>
+              <div class="field-wrap">
+                <span class="field-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+                <input class="field-input" id="confirm_password" name="confirm_password" type="password"
+                  placeholder="Repeat your password" autocomplete="new-password" />
+                <button type="button" class="pw-toggle" id="pwToggle2" aria-label="Toggle confirm password">
+                  <svg id="eye2" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
+              <span class="field-hint" id="matchHint"></span>
+            </div>
+
+            <!-- Terms -->
+            <label class="terms-label">
+              <input type="checkbox" id="terms" required />
+              I agree to the <a href="#">Terms of Service</a> and
+              <a href="#">Privacy Policy</a>
+            </label>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-submit" id="submitBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+              Create Free Account
+            </button>
+          </form>
+
+          <p class="auth-footer">
+            Already have an account?
+            <a href="{{ url_for('login') }}">Log in →</a>
+          </p>
+        </div>
+      </div>
     </div>
-    <div>
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" required />
-    </div>
-    <div>
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" required />
-    </div>
-    <button type="submit">Create account</button>
-  </form>
-  <p>Have an account? <a href="{{ url_for('login') }}">Login</a></p>
-</div>
-{% endblock %}
+  </main>
+
+  <script src="../static/js/register.js"></script>
+</body>
+</html>
