@@ -529,7 +529,11 @@ body::before {
     align-items: center;
     gap: 16px;
 }
-.modal-content .modal-icon svg { stroke: var(--error); }
+.modal-body { display: flex; align-items: center; gap: 12px; }
+.modal-content .modal-icon { display:flex; align-items:center; justify-content:center; }
+.modal-content .modal-icon svg { stroke: currentColor; }
+.modal-content.error .modal-icon svg { stroke: var(--error); }
+.modal-content.success .modal-icon svg { stroke: var(--teal); }
 .modal-content .modal-text { color: var(--white); font-size: .98rem; }
 .modal-content.error { border-color: rgba(255,107,107,.12); background: rgba(255,107,107,.03); }
 .modal-close {

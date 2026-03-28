@@ -9,7 +9,7 @@
             <div style="background:#fee;color:#900;padding:8px;border-radius:6px">{{ error }}</div>
         {% endif %}
 
-        <form id="uploadForm" method="post" action="{{ url_for('predict_disease') }}" enctype="multipart/form-data">
+        <form id="uploadForm" method="post" action="{{ url_for('pred.predict_disease') }}" enctype="multipart/form-data">
             <div>
                 <input type="file" name="image" accept="image/*" id="imageInput" required />
             </div>
@@ -26,7 +26,7 @@
                     <div>
                         <p>Disease: <strong>{{ disease }}</strong></p>
                         <p>Confidence: <strong>{{ confidence }}</strong></p>
-                        <p><a href="{{ url_for('history') }}">View history</a></p>
+                        <p><a href="{{ url_for('pred.history') }}">View history</a></p>
                     </div>
                 </div>
 
@@ -35,7 +35,7 @@
                 </div>
 
                 <div id="feedbackArea" style="display:none;margin-top:12px;border-top:1px solid #eee;padding-top:12px;">
-                    <form method="post" action="{{ url_for('submit_feedback') }}">
+                    <form method="post" action="{{ url_for('pred.submit_feedback') }}">
                         <input type="hidden" name="prediction_id" value="{{ prediction_id }}" />
                         <label>
                             Was this correct?

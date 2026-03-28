@@ -7,11 +7,11 @@
   <h3>Feedback</h3>
   <div style="margin-bottom:8px">
     <strong>Filter:</strong>
-    <a href="{{ url_for('admin_panel') }}" {% if status=='all' %}style="font-weight:bold"{% endif %}>All</a>
+    <a href="{{ url_for('admin.admin_panel') }}" {% if status=='all' %}style="font-weight:bold"{% endif %}>All</a>
     |
-    <a href="{{ url_for('admin_panel', status='correct') }}" {% if status=='correct' %}style="font-weight:bold"{% endif %}>Correct</a>
+    <a href="{{ url_for('admin.admin_panel', status='correct') }}" {% if status=='correct' %}style="font-weight:bold"{% endif %}>Correct</a>
     |
-    <a href="{{ url_for('admin_panel', status='wrong') }}" {% if status=='wrong' %}style="font-weight:bold"{% endif %}>Wrong</a>
+    <a href="{{ url_for('admin.admin_panel', status='wrong') }}" {% if status=='wrong' %}style="font-weight:bold"{% endif %}>Wrong</a>
   </div>
   {% if feedback_items %}
     <ul>
@@ -27,11 +27,11 @@
         </div>
         <div style="float:right">
           {% if not fb.handled %}
-            <form method="post" action="{{ url_for('approve_feedback', feedback_id=fb.id) }}" style="display:inline-block;">
+            <form method="post" action="{{ url_for('admin.approve_feedback', feedback_id=fb.id) }}" style="display:inline-block;">
               <input name="split" value="train" hidden />
               <button type="submit">Approve</button>
             </form>
-            <form method="post" action="{{ url_for('reject_feedback', feedback_id=fb.id) }}" style="display:inline-block;">
+            <form method="post" action="{{ url_for('admin.reject_feedback', feedback_id=fb.id) }}" style="display:inline-block;">
               <button type="submit">Reject</button>
             </form>
           {% else %}

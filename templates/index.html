@@ -9,6 +9,7 @@
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="../static/css/index.css" />
+    <link rel="stylesheet" href="../static/css/login.css" />
 </head>
 
 <body>
@@ -23,10 +24,36 @@
             <a href="#features">Features</a>
             <a href="#how">How It Works</a>
             <a href="#about">About</a>
-            <a href="{{ url_for('login') }}">Login</a>
-            <a href="{{ url_for('register') }}" class="btn-nav">Get Started</a>
+            <a href="{{ url_for('auth.login') }}">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="btn-nav">Get Started</a>
         </div>
     </nav>
+
+        {# If redirected after logout, show a centered modal (don't use flash for logout) #}
+        {% if request.args.get('logged_out') %}
+            <div id="loggedOutModal" class="modal" aria-hidden="true">
+                <div class="modal-backdrop" data-action="close"></div>
+                <div class="modal-content success" role="dialog" aria-modal="true">
+                    <div class="modal-body">
+                        <div class="modal-icon success">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                        </div>
+                        <div class="modal-text">You have been logged out.</div>
+                    </div>
+                    <button class="modal-close" aria-label="Close message">OK</button>
+                </div>
+            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const modal = document.getElementById('loggedOutModal');
+                    if (!modal) return;
+                    modal.classList.add('open');
+                    modal.querySelectorAll('[data-action="close"]').forEach(el => el.addEventListener('click', () => modal.remove()));
+                    const closeBtn = modal.querySelector('.modal-close');
+                    if (closeBtn) closeBtn.addEventListener('click', () => modal.remove());
+                });
+            </script>
+        {% endif %}
 
     <!-- HERO -->
     <section class="hero">
@@ -49,13 +76,13 @@
         </p>
 
         <div class="hero-cta">
-            <a href="{{ url_for('register') }}" class="btn-primary">
+            <a href="{{ url_for('auth.register') }}" class="btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M12 5v14M5 12l7 7 7-7" />
                 </svg>
                 Start Diagnosing — Free
             </a>
-            <a href="#how" class="btn-outline">
+                <a href="#how" class="btn-outline">
                 How It Works
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M5 12h14M12 5l7 7-7 7" />
@@ -285,14 +312,14 @@
             <p>Create a free account in seconds. No credit card required.<br />Start protecting your aquaculture
                 investment today.</p>
             <div class="cta-buttons">
-                <a href="{{ url_for('register') }}" class="btn-primary">
+                <a href="{{ url_for('auth.register') }}" class="btn-primary">
                     Create Free Account
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                 </a>
-                <a href="{{ url_for('login') }}" class="btn-outline">Already have an account?</a>
+                <a href="{{ url_for('auth.login') }}" class="btn-outline">Already have an account?</a>
             </div>
         </div>
     </section>

@@ -9,7 +9,7 @@
       <li>
         <img src="/{{ it.image_path }}" alt="img" style="height:80px;" />
         <strong>{{ it.predicted_class }}</strong> — {{ '%.2f' % (it.confidence*100) }}%
-        <form method="post" action="{{ url_for('submit_feedback') }}">
+        <form method="post" action="{{ url_for('pred.submit_feedback') }}">
           <input type="hidden" name="prediction_id" value="{{ it.id }}" />
           <label>
             Was this correct?

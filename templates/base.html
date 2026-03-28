@@ -17,15 +17,15 @@
     <div class="nav">
       <a href="{{ url_for('index') }}">Home</a>
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('predict_get') }}">Classify</a>
-        <a href="{{ url_for('history') }}">History</a>
+        <a href="{{ url_for('pred.predict_get') }}">Classify</a>
+        <a href="{{ url_for('pred.history') }}">History</a>
         {% if current_user.role == 'admin' %}
-          <a href="{{ url_for('admin_panel') }}">Admin</a>
+          <a href="{{ url_for('admin.admin_panel') }}">Admin</a>
         {% endif %}
-        <a href="{{ url_for('logout') }}">Logout</a>
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
       {% else %}
-        <a href="{{ url_for('login') }}">Login</a>
-        <a href="{{ url_for('register') }}">Register</a>
+        <a href="{{ url_for('auth.login') }}">Login</a>
+        <a href="{{ url_for('auth.register') }}">Register</a>
       {% endif %}
     </div>
 
@@ -34,8 +34,8 @@
         {% if messages %}
           <div id="flashMessages" style="position:fixed;top:12px;right:12px;z-index:9999;">
             {% for category, msg in messages %}
-              <div class="flash" style="background:#f0f0f0;padding:8px;border-radius:6px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-                <strong>{{ category }}:</strong> {{ msg }}
+              <div class="flash" style="background:rgba(15,30,48,.95);color:#e8f4f8;padding:8px;border-radius:6px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                <strong style="color:#00c9a7">{{ category }}:</strong> {{ msg }}
               </div>
             {% endfor %}
           </div>

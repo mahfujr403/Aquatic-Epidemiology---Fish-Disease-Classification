@@ -87,7 +87,7 @@
           <h2 class="card-title">Create <em>Account</em></h2>
           <p class="card-subtitle">Free! No credit card needed.</p>
 
-          <form class="auth-form" method="post" action="{{ url_for('register') }}" id="registerForm" novalidate>
+          <form class="auth-form" method="post" action="{{ url_for('auth.register') }}" id="registerForm" novalidate>
             <!-- Username -->
             <div class="field-group">
               <label class="field-label" for="username">Username</label>
@@ -194,7 +194,7 @@
 
           <p class="auth-footer">
             Already have an account?
-            <a href="{{ url_for('login') }}">Log in →</a>
+            <a href="{{ url_for('auth.login') }}">Log in →</a>
           </p>
         </div>
       </div>
