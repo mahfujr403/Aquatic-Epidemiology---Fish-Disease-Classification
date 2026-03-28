@@ -9,8 +9,8 @@
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="../static/css/prediction.css">
-    <link rel="stylesheet" href="../static/css/footer.css" />
     <link rel="stylesheet" href="../static/css/index.css" />
+    <link rel="stylesheet" href="../static/css/footer.css" />
 </head>
 
 <body>
@@ -197,6 +197,7 @@
                             </div>
                             <form method="post" action="{{ url_for('pred.submit_feedback') }}">
                                 <input type="hidden" name="prediction_id" value="{{ prediction_id }}" />
+                                <input type="hidden" name="next" value="{{ url_for('pred.predict_get') }}" />
                                 <div class="fb-field">
                                     <label class="fb-label">Was this correct?</label>
                                     <select name="is_corrected" class="fb-select" id="feedbackCorrect">

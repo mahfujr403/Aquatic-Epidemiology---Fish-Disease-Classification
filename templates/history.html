@@ -1,32 +1,387 @@
-{% extends "base.html" %}
-{% block title %}Prediction History{% endblock %}
-{% block content %}
-<div class="container">
-  <h2>Your Predictions</h2>
-  {% if items %}
-    <ul>
-    {% for it in items %}
-      <li>
-        <img src="/{{ it.image_path }}" alt="img" style="height:80px;" />
-        <strong>{{ it.predicted_class }}</strong> — {{ '%.2f' % (it.confidence*100) }}%
-        <form method="post" action="{{ url_for('pred.submit_feedback') }}">
-          <input type="hidden" name="prediction_id" value="{{ it.id }}" />
-          <label>
-            Was this correct?
-            <select name="is_corrected">
-              <option value="false">Yes</option>
-              <option value="true">No</option>
-            </select>
-          </label>
-          <label>Correct label (if wrong): <input name="corrected_label" /></label>
-          <label>Note: <input name="note" /></label>
-          <button type="submit">Send feedback</button>
-        </form>
-      </li>
-    {% endfor %}
-    </ul>
-  {% else %}
-    <p>No history yet.</p>
-  {% endif %}
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History — AquaDiag</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
+    <link rel="stylesheet" href="../static/css/history.css">
+    <link rel="stylesheet" href="../static/css/index.css" />
+    <link rel="stylesheet" href="../static/css/prediction.css">
+  <link rel="stylesheet" href="../static/css/footer.css" />
+
+</head>
+
+<body>
+
+  <div class="page-bg">
+    <div class="circle c1"></div>
+    <div class="circle c2"></div>
+  </div>
+
+  <!-- ═══════════ NAVBAR (same as prediction.html) ═══════════ -->
+    <nav class="navbar">
+        <a class="nav-logo" href="{{ url_for('index') }}">Aqua<span>Diag</span></a>
+
+        <div class="menu-toggle" id="menuToggle">☰</div>
+
+        <div class="nav-links" id="navLinks">
+
+            <a class="nav-link" href="{{ url_for('pred.predict_get') }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+                Classify
+            </a>
+            <a class="nav-link active" href="{{ url_for('pred.history') }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M3 9h18M9 21V9" />
+                </svg>
+                History
+            </a>
+            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                </svg>
+                Logout
+            </a>
+
+        </div>
+    </nav>
+
+
+  <!-- ═══════════ PAGE ═══════════ -->
+  <div class="hist-page">
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash-banner {{ category }}">
+            {% if category == 'success' %}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            {% else %}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            {% endif %}
+            {{ msg }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Header -->
+    <div class="hist-header">
+      <div class="hist-eyebrow"><span class="dot"></span> Diagnosis Log</div>
+      <h1 class="hist-title">Your <em>History</em></h1>
+      <p class="hist-subtitle">All previous diagnoses — click any card to expand details and submit feedback.</p>
+    </div>
+
+    {% if items %}
+
+      <!-- ── STATS STRIP ── -->
+      {% set total     = history_stats.total if history_stats else 0 %}
+      {% set healthy   = history_stats.healthy if history_stats else 0 %}
+      {% set diseased  = history_stats.diseased if history_stats else 0 %}
+      {% set avg_conf  = history_stats.avg_conf if history_stats else 0 %}
+
+      <div class="stats-strip">
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-body">
+            <div class="stat-val">{{ total }}</div>
+            <div class="stat-lbl">Total Scans</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-body">
+            <div class="stat-val" style="color:var(--teal)">{{ healthy }}</div>
+            <div class="stat-lbl">Healthy</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-body">
+            <div class="stat-val" style="color:var(--error)">{{ diseased }}</div>
+            <div class="stat-lbl">Diseases</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-body">
+            <div class="stat-val">{{ avg_conf }}%</div>
+            <div class="stat-lbl">Avg. Confidence</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TOOLBAR ── -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </span>
+          <input class="search-input" id="searchInput" type="text"
+            placeholder="Search by disease name…" autocomplete="off" />
+        </div>
+
+        <div class="filter-row">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="healthy">Healthy</button>
+          <button class="filter-btn" data-filter="disease">Disease</button>
+          <select class="sort-select" id="sortSelect">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="conf-high">Highest confidence</option>
+            <option value="conf-low">Lowest confidence</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ── NO RESULTS ── -->
+      <div class="no-results" id="noResults">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);margin-bottom:8px"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><br/>
+        No results match your search.
+      </div>
+
+      <!-- ── HISTORY LIST ── -->
+      <div class="hist-list" id="histList">
+
+        {% for it in items %}
+        {% set is_healthy = it.predicted_class == 'Healthy Fish' %}
+        {% set card_class = 'healthy' if is_healthy else 'disease' %}
+        {% set conf_pct = (it.confidence * 100) | round(1) %}
+
+        <div class="hist-card {{ card_class }}"
+             id="card-{{ it.id }}"
+             data-disease="{{ it.predicted_class }}"
+             data-conf="{{ it.confidence }}"
+             data-date="{{ it.created_at.isoformat() }}"
+             data-class="{{ card_class }}"
+             style="animation-delay:{{ loop.index0 * 0.05 }}s">
+
+          <!-- ── TOP ROW (clickable to expand) ── -->
+          <div class="hist-card-main" onclick="toggleCard({{ it.id }})">
+
+            {% if it.image_path %}
+              <img class="hist-thumb"
+                   src="/{{ it.image_path }}" alt="{{ it.predicted_class }}"
+                   loading="lazy" />
+            {% else %}
+              <div class="hist-thumb-placeholder">🐟</div>
+            {% endif %}
+
+            <div class="hist-info">
+              <div class="hist-disease">{{ it.predicted_class }}</div>
+              <div class="hist-meta">
+                <span class="hist-badge {% if is_healthy %}badge-healthy{% else %}badge-disease{% endif %}">
+                  {{ 'Healthy' if is_healthy else 'Disease' }}
+                </span>
+                <span class="hist-date">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                  </svg>
+                  {{ it.created_at.strftime('%b %d, %Y') }}
+                </span>
+              </div>
+
+              <div class="hist-conf-row">
+                <div class="hist-conf-track">
+                  <div class="hist-conf-fill" data-width="{{ conf_pct }}"></div>
+                </div>
+                <span class="hist-conf-pct">{{ conf_pct }}%</span>
+              </div>
+            </div>
+
+            <div class="hist-chevron">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- ── EXPANDED BODY ── -->
+          <div class="hist-card-body" id="body-{{ it.id }}">
+            <div class="hist-card-body-inner">
+
+              <!-- Full image -->
+              {% if it.image_path %}
+                <img class="hist-full-img" src="/{{ it.image_path }}" alt="{{ it.predicted_class }}" loading="lazy" />
+              {% endif %}
+
+              <!-- Model info -->
+              <div class="model-pill">
+                <div class="model-pill-icon">🔀</div>
+                <div>
+                  <div class="model-pill-text">Model used</div>
+                  <div class="model-pill-name">{{ it.model_used }}</div>
+                </div>
+              </div>
+
+              <!-- Timestamp full -->
+              <div style="font-size:.73rem;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:5px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                {{ it.created_at.strftime('%A, %B %d %Y — %H:%M') }}
+              </div>
+
+              <!-- Disease alert -->
+              {% if not is_healthy %}
+                <div style="background:rgba(255,107,107,.07);border:1px solid rgba(255,107,107,.2);border-radius:9px;padding:10px 12px;display:flex;align-items:flex-start;gap:8px;font-size:.77rem;color:var(--error);line-height:1.55;margin-bottom:12px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <span>Disease detected — consult an aquaculture specialist for treatment. This result is for screening only.</span>
+                </div>
+              {% else %}
+                <div style="background:rgba(0,201,167,.07);border:1px solid rgba(0,201,167,.2);border-radius:9px;padding:10px 12px;display:flex;align-items:flex-start;gap:8px;font-size:.77rem;color:var(--teal);line-height:1.55;margin-bottom:12px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  <span>No disease detected — fish appears healthy. Maintain good water quality and monitor regularly.</span>
+                </div>
+              {% endif %}
+
+              <!-- Feedback toggle + form -->
+              {% if it.feedbacks %}
+                <!-- Already has feedback -->
+                <button class="feedback-toggle-btn submitted" disabled>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                  Feedback submitted
+                </button>
+              {% else %}
+                <button class="feedback-toggle-btn" id="ftbtn-{{ it.id }}"
+                        onclick="toggleFeedback({{ it.id }})">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  </svg>
+                  Was this correct? Give Feedback
+                </button>
+
+                <div class="feedback-panel" id="fp-{{ it.id }}">
+                  <div class="feedback-heading">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Submit Feedback for this Prediction
+                  </div>
+                  <form method="post" action="{{ url_for('pred.submit_feedback') }}">
+                    <input type="hidden" name="prediction_id" value="{{ it.id }}" />
+                    <input type="hidden" name="next" value="{{ url_for('pred.history') }}" />
+                    <div class="fb-field">
+                      <label class="fb-label">Was this correct?</label>
+                      <select name="is_corrected" class="fb-select" id="fc-{{ it.id }}"
+                              onchange="toggleLabel({{ it.id }}, this.value)">
+                        <option value="false">✓ Yes, prediction was correct</option>
+                        <option value="true">✗ No, prediction was wrong</option>
+                      </select>
+                    </div>
+                    <div class="fb-field" id="lf-{{ it.id }}" style="display:none">
+                      <label class="fb-label">Correct Disease Label</label>
+                      <select name="corrected_label" class="fb-select">
+                        <option value="">— Select correct disease —</option>
+                        <option value="Bacterial Red disease">Bacterial Red Disease</option>
+                        <option value="Bacterial diseases - Aeromoniasis">Aeromoniasis</option>
+                        <option value="Bacterial gill disease">Bacterial Gill Disease</option>
+                        <option value="Fungal diseases Saprolegniasis">Saprolegniasis</option>
+                        <option value="Healthy Fish">Healthy Fish</option>
+                        <option value="Parasitic diseases">Parasitic Diseases</option>
+                        <option value="Viral diseases White tail disease">White Tail Disease</option>
+                      </select>
+                    </div>
+                    <div class="fb-field">
+                      <label class="fb-label">Note (optional)</label>
+                      <input type="text" name="note" class="fb-input"
+                             placeholder="Any additional context about this case…" />
+                    </div>
+                    <button type="submit" class="btn-feedback-submit">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                      </svg>
+                      Submit Feedback
+                    </button>
+                  </form>
+                </div>
+              {% endif %}
+
+            </div>
+          </div><!-- /hist-card-body -->
+        </div><!-- /hist-card -->
+        {% endfor %}
+
+      </div><!-- /hist-list -->
+
+      {% if pagination and pagination.total_pages > 1 %}
+      <div class="load-more-wrap" aria-label="History pagination">
+        {% if pagination.has_prev %}
+          <a class="btn-load-more" href="{{ url_for('pred.history', page=pagination.page-1) }}">Previous</a>
+        {% endif %}
+
+        {% set start_page = [1, pagination.page - 1] | max %}
+        {% set end_page = [pagination.total_pages, pagination.page + 1] | min %}
+
+        {% if start_page > 1 %}
+          <a class="btn-load-more" href="{{ url_for('pred.history', page=1) }}">1</a>
+          {% if start_page > 2 %}
+            <span class="btn-load-more" style="cursor:default;opacity:.75;">…</span>
+          {% endif %}
+        {% endif %}
+
+        {% for p in range(start_page, end_page + 1) %}
+          {% if p == pagination.page %}
+            <span class="btn-load-more" style="border-color:var(--teal);color:var(--teal);background:rgba(0,201,167,.08);cursor:default;">{{ p }}</span>
+          {% else %}
+            <a class="btn-load-more" href="{{ url_for('pred.history', page=p) }}">{{ p }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if end_page < pagination.total_pages %}
+          {% if end_page < pagination.total_pages - 1 %}
+            <span class="btn-load-more" style="cursor:default;opacity:.75;">…</span>
+          {% endif %}
+          <a class="btn-load-more" href="{{ url_for('pred.history', page=pagination.total_pages) }}">{{ pagination.total_pages }}</a>
+        {% endif %}
+
+        {% if pagination.has_next %}
+          <a class="btn-load-more" href="{{ url_for('pred.history', page=pagination.page+1) }}">Next</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+    {% else %}
+
+      <!-- ── EMPTY STATE ── -->
+      <div class="empty-state">
+        <div class="empty-icon">🔬</div>
+        <h2 class="empty-title">No diagnoses yet</h2>
+        <p class="empty-sub">Upload your first fish photo and the AI model will classify it instantly.</p>
+        <a class="btn-primary" href="{{ url_for('pred.predict_get') }}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12l7 7 7-7"/>
+          </svg>
+          Start Your First Diagnosis
+        </a>
+      </div>
+
+    {% endif %}
+
+  </div><!-- /hist-page -->
+
+  <!-- FOOTER -->
+  {% include 'footer.html' %}
+ <script src="../static/js/history.js"></script>
+
+</body>
+</html>

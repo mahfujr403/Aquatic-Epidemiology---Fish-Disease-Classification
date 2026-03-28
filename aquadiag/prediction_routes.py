@@ -4,10 +4,24 @@ from . import db
 from . import models
 import os
 import uuid
+import math
+from sqlalchemy import func
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 
 pred_bp = Blueprint('pred', __name__)
+
+
+def _feedback_redirect_target():
+    """Return a safe local redirect target for feedback flow."""
+    next_url = (request.form.get('next') or '').strip()
+    if next_url.startswith('/') and not next_url.startswith('//'):
+        return next_url
+
+    ref = request.referrer or ''
+    if '/history' in ref:
+        return url_for('pred.history')
+    return url_for('pred.predict_get')
 
 
 @pred_bp.route('/predict', methods=['GET'])
@@ -94,17 +108,49 @@ def predict_disease():
 @pred_bp.route('/history', methods=['GET'])
 @login_required
 def history():
-    items = (
-        models.Prediction.query.filter_by(user_id=current_user.id)
-        .order_by(models.Prediction.created_at.desc())
-        .all()
-    )
-    return render_template('history.html', items=items)
+    page = request.args.get('page', 1, type=int) or 1
+    per_page = 10
+
+    base_q = models.Prediction.query.filter_by(user_id=current_user.id)
+    q = base_q.order_by(models.Prediction.created_at.desc())
+
+    total = q.count()
+    total_pages = math.ceil(total / per_page) if total else 1
+    page = max(1, min(page, total_pages))
+
+    items = q.offset((page - 1) * per_page).limit(per_page).all()
+
+    pagination = {
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'total_pages': total_pages,
+        'has_prev': page > 1,
+        'has_next': page < total_pages,
+    }
+
+    healthy = base_q.filter(models.Prediction.predicted_class == 'Healthy Fish').count()
+    diseased = max(total - healthy, 0)
+    avg_conf_raw = (
+        db.session.query(func.avg(models.Prediction.confidence))
+        .filter(models.Prediction.user_id == current_user.id)
+        .scalar()
+    ) or 0.0
+
+    history_stats = {
+        'total': total,
+        'healthy': healthy,
+        'diseased': diseased,
+        'avg_conf': round(float(avg_conf_raw) * 100, 1) if total else 0.0,
+    }
+
+    return render_template('history.html', items=items, pagination=pagination, history_stats=history_stats)
 
 
 @pred_bp.route('/feedback', methods=['POST'])
 @login_required
 def submit_feedback():
+    target = _feedback_redirect_target()
     prediction_id = request.form.get('prediction_id', type=int)
     is_corrected = request.form.get('is_corrected') == 'true'
     corrected_label = request.form.get('corrected_label', '').strip()
@@ -113,11 +159,11 @@ def submit_feedback():
     pred = models.Prediction.query.get_or_404(prediction_id)
     if pred.user_id != current_user.id and current_user.role != 'admin':
         flash('You are not allowed to submit feedback for this prediction.', 'error')
-        return redirect(url_for('pred.history'))
+        return redirect(target)
 
     if is_corrected and not corrected_label:
         flash('Corrected label is required when prediction is wrong.', 'error')
-        return redirect(url_for('pred.history'))
+        return redirect(target)
 
     fb = models.Feedback(
         corrected_label=corrected_label if is_corrected else pred.predicted_class,
@@ -130,4 +176,4 @@ def submit_feedback():
     db.session.commit()
 
     flash('Feedback submitted. Thank you!', 'success')
-    return redirect(url_for('pred.predict_get'))
+    return redirect(target)
