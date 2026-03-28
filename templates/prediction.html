@@ -1,68 +1,468 @@
-  
-{% extends "base.html" %}
-{% block title %}Classify{% endblock %}
-{% block content %}
-    <div style="max-width:720px;margin:16px auto;padding:12px;">
-        <h2>Classify Fish Disease</h2>
+<!DOCTYPE html>
+<html lang="en">
 
-        {% if error %}
-            <div style="background:#fee;color:#900;padding:8px;border-radius:6px">{{ error }}</div>
-        {% endif %}
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Classify — AquaDiag</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../static/css/prediction.css">
+    <link rel="stylesheet" href="../static/css/footer.css" />
+    <link rel="stylesheet" href="../static/css/index.css" />
+</head>
 
-        <form id="uploadForm" method="post" action="{{ url_for('pred.predict_disease') }}" enctype="multipart/form-data">
+<body>
+
+    <div class="page-bg">
+        <div class="circle c1"></div>
+        <div class="circle c2"></div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Analyzing your image…</div>
+        <div class="loading-sub">Feature fusion in progress...</div>
+    </div>
+
+    <!-- ════════ NAVBAR ════════ -->
+
+    <nav class="navbar">
+        <a class="nav-logo" href="{{ url_for('index') }}">Aqua<span>Diag</span></a>
+
+        <div class="menu-toggle" id="menuToggle">☰</div>
+
+
+
+
+        <div class="nav-links" id="navLinks">
+
+            <a class="nav-link active" href="{{ url_for('pred.predict_get') }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+                Classify
+            </a>
+            <a class="nav-link" href="{{ url_for('pred.history') }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M3 9h18M9 21V9" />
+                </svg>
+                History
+            </a>
+            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                </svg>
+                Logout
+            </a>
+
+        </div>
+    </nav>
+
+    <!-- ════════ PAGE ════════ -->
+    <div class="pred-page">
+
+        <div class="pred-header">
             <div>
-                <input type="file" name="image" accept="image/*" id="imageInput" required />
+                <div class="pred-eyebrow"><span class="dot"></span> AI Diagnosis</div>
+                <h1 class="pred-title">Classify <em>Fish Disease</em></h1>
+                <p class="pred-subtitle">Upload a clear photo — the ensemble model returns a confidence-scored result
+                    instantly.</p>
             </div>
-            <div style="margin-top:8px">
-                <button type="submit">Upload & Classify</button>
+            <div class="model-pill">
+                <div class="model-pill-icon">🔀</div>
+                <div>
+                    <div class="model-pill-label">Active Model</div>
+                    <div class="model-pill-name">ResNet50 + EfficientNetV2</div>
+                </div>
             </div>
-        </form>
+        </div>
 
-        {% if success %}
-            <div id="result" style="margin-top:20px;border:1px solid #ddd;padding:12px;border-radius:8px;">
-                <h3>Result</h3>
-                <div style="display:flex;gap:12px;align-items:center">
-                    <img src="/{{ image_path }}" style="max-width:240px;border-radius:6px;border:1px solid #ccc;" />
-                    <div>
-                        <p>Disease: <strong>{{ disease }}</strong></p>
-                        <p>Confidence: <strong>{{ confidence }}</strong></p>
-                        <p><a href="{{ url_for('pred.history') }}">View history</a></p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, msg in messages %}
+        <div class="flash-banner {{ category }}">
+            {% if category == 'success' %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M20 6L9 17l-5-5" />
+            </svg>
+            {% else %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v4M12 16h.01" />
+            </svg>
+            {% endif %}
+            {{ msg }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="pred-grid">
+
+            <!-- ── LEFT ── -->
+            <div>
+                <div class="upload-card">
+
+                    {% if success %}
+                    <!-- ══ RESULT ══ -->
+                    <div class="upload-card-header">
+                        <div class="card-icon">✅</div>
+                        <div>
+                            <div class="card-heading">Diagnosis Complete</div>
+                            <div class="card-sub">Ensemble AI result</div>
+                        </div>
+                    </div>
+
+                    <div class="result-section">
+                        <div class="result-divider">Result</div>
+
+                        <div class="result-img-wrap">
+                            <img src="/{{ image_path }}" alt="Analyzed fish" loading="lazy" />
+                            <div class="result-img-badge">Analyzed ✓</div>
+                        </div>
+
+                        <div
+                            class="result-disease-card {% if disease == 'Healthy Fish' %}healthy{% else %}disease{% endif %}">
+                            <div class="result-label">Predicted Condition</div>
+                            <div class="result-disease-name">{{ disease }}</div>
+                            <div class="confidence-row">
+                                <span class="confidence-label">Confidence Score</span>
+                                <span class="confidence-pct" id="confPct">0%</span>
+                            </div>
+                            <div class="confidence-bar-track">
+                                <div class="confidence-bar-fill" id="confBar" style="width:0%" data-target="{% if success and confidence_raw is not none %}{{ (confidence_raw * 100) | round(2) }}{% else %}0{% endif %}"></div>
+                            </div>
+                        </div>
+
+                        {% if all_predictions %}
+                        <div class="breakdown-title">All Class Probabilities</div>
+                        <div class="breakdown-list">
+                            {% for cls, pct in all_predictions %}
+                            <div class="breakdown-item {% if cls == disease %}top{% endif %}">
+                                <span class="breakdown-name">{{ cls }}</span>
+                                <div class="breakdown-bar-track">
+                                    <div class="breakdown-bar-fill" data-width="{{ pct }}"></div>
+                                </div>
+                                <span class="breakdown-pct">{{ '%.1f'%pct }}%</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if disease != 'Healthy Fish' %}
+                        <div class="result-alert warn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <span>Disease detected — consult an aquaculture specialist for treatment. This result is for
+                                screening only.</span>
+                        </div>
+                        {% else %}
+                        <div class="result-alert healthy">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                            <span>No disease detected — fish appears healthy. Maintain good water quality and monitor
+                                regularly.</span>
+                        </div>
+                        {% endif %}
+
+                        <button class="feedback-toggle-btn" id="feedbackToggle">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                            </svg>
+                            Was this correct? Give Feedback
+                        </button>
+
+                        <div class="feedback-panel" id="feedbackPanel">
+                            <div class="feedback-heading">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                                Submit Feedback
+                            </div>
+                            <form method="post" action="{{ url_for('pred.submit_feedback') }}">
+                                <input type="hidden" name="prediction_id" value="{{ prediction_id }}" />
+                                <div class="fb-field">
+                                    <label class="fb-label">Was this correct?</label>
+                                    <select name="is_corrected" class="fb-select" id="feedbackCorrect">
+                                        <option value="false">✓ Yes, correct</option>
+                                        <option value="true">✗ No, wrong</option>
+                                    </select>
+                                </div>
+                                <div class="fb-field" id="labelField" style="display:none">
+                                    <label class="fb-label">Correct Disease Label</label>
+                                    <select name="corrected_label" class="fb-select">
+                                        {% for cls in class_names %}
+                                        <option value="{{ cls }}" {% if cls==disease %}selected{% endif %}>{{ cls }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="fb-field">
+                                    <label class="fb-label">Note (optional)</label>
+                                    <input type="text" name="note" class="fb-input"
+                                        placeholder="Any additional context…" />
+                                </div>
+                                <button type="submit" class="btn-feedback-submit">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.5">
+                                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                                    </svg>
+                                    Submit Feedback
+                                </button>
+                            </form>
+                        </div>
+
+                        <a class="history-link" href="{{ url_for('pred.history') }}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <path d="M3 9h18M9 21V9" />
+                            </svg>
+                            View full prediction history
+                        </a>
+                    </div>
+
+                    <!-- Diagnose another -->
+                    <div style="padding:0 16px 18px;">
+                        <a class="btn-new" href="{{ url_for('pred.predict_get') }}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <polyline points="1 4 1 10 7 10" />
+                                <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
+                            </svg>
+                            Diagnose Another Fish
+                        </a>
+                    </div>
+
+                    {% else %}
+                    <!-- ══ UPLOAD ══ -->
+                    <div class="upload-card-header">
+                        <div class="card-icon">📤</div>
+                        <div>
+                            <div class="card-heading">Upload Fish Image</div>
+                            <div class="card-sub">Drag & drop or tap to browse</div>
+                        </div>
+                    </div>
+
+                    {% if error %}
+                    <div class="error-banner">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="flex-shrink:0">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 8v4M12 16h.01" />
+                        </svg>
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form id="uploadForm" method="post" action="{{ url_for('pred.predict_disease') }}"
+                        enctype="multipart/form-data">
+
+                        <!-- Drop zone — visible before image selected -->
+                        <div class="drop-zone" id="dropZone">
+                            <input type="file" name="image" id="imageInput" accept="image/*" required />
+                            <div class="drop-icon">🐟</div>
+                            <div class="drop-title">Drop image here</div>
+                            <p class="drop-sub">or tap to choose from your device or camera</p>
+                            <div class="drop-formats">
+                                <span class="fmt-tag">PNG</span>
+                                <span class="fmt-tag">JPG</span>
+                                <span class="fmt-tag">JPEG</span>
+                                <span class="fmt-tag">WEBP</span>
+                                <span class="fmt-tag">GIF</span>
+                            </div>
+                        </div>
+
+                        <!-- Preview — fully replaces drop zone after selection -->
+                        <div class="preview-wrap" id="previewWrap">
+                            <div class="preview-img-container">
+                                <img id="previewImg" src="#" alt="Preview" />
+                                <button type="button" class="preview-change-fab" id="changeImageBtn"
+                                    aria-label="Change image">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.5">
+                                        <polyline points="1 4 1 10 7 10" />
+                                        <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
+                                    </svg>
+                                    Change
+                                </button>
+                            </div>
+                            <div class="preview-meta">
+                                <span class="preview-filename" id="previewFilename">—</span>
+                                <span class="preview-size" id="previewSize">—</span>
+                            </div>
+                        </div>
+
+                        <div class="submit-area">
+                            <button type="submit" class="btn-submit" id="submitBtn" disabled>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <path
+                                        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
+                                </svg>
+                                Run AI Diagnosis
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <!-- ── SIDEBAR ── -->
+            <div class="sidebar">
+
+                <div class="accordion-card" id="acc1">
+                    <button class="accordion-trigger" onclick="toggleAcc('acc1')" type="button">
+                        <div class="sb-icon">📸</div>
+                        <div class="sb-label-wrap">
+                            <div class="sb-title">Photo Tips</div>
+                            <div class="sb-sub">For best accuracy</div>
+                        </div>
+                        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
+                    <div class="accordion-body">
+                        <div class="tips-list">
+                            <div class="tip-item">
+                                <div class="tip-num">1</div>
+                                <p class="tip-text"><strong>Good lighting</strong> — natural light works best. Avoid
+                                    harsh shadows on the fish body.</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-num">2</div>
+                                <p class="tip-text"><strong>Full body visible</strong> — fins, skin and tail in one
+                                    frame without cropping.</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-num">3</div>
+                                <p class="tip-text"><strong>Close & in focus</strong> — steady camera, sharp image. Blur
+                                    significantly lowers confidence.</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-num">4</div>
+                                <p class="tip-text"><strong>Plain background</strong> — a simple surface reduces visual
+                                    interference.</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-num">5</div>
+                                <p class="tip-text"><strong>Show affected area</strong> — angle the shot to highlight
+                                    lesions or discoloration.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div style="margin-top:12px">
-                    <button id="toggleFeedback" type="button">Give Feedback</button>
+                <div class="accordion-card" id="acc2">
+                    <button class="accordion-trigger" onclick="toggleAcc('acc2')" type="button">
+                        <div class="sb-icon">🔬</div>
+                        <div class="sb-label-wrap">
+                            <div class="sb-title">Detectable Conditions</div>
+                            <div class="sb-sub">7 classes recognized</div>
+                        </div>
+                        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
+                    <div class="accordion-body">
+                        <div class="disease-ref-list">
+                            <div class="disease-ref-item">
+                                <div class="disease-dot" style="background:#ff6b6b"></div><span
+                                    class="disease-ref-name">Bacterial Red Disease</span><span class="disease-ref-badge"
+                                    style="background:rgba(255,107,107,.1);color:#ff6b6b">Bacterial</span>
+                            </div>
+                            <div class="disease-ref-item">
+                                <div class="disease-dot" style="background:#ff8a8a"></div><span
+                                    class="disease-ref-name">Aeromoniasis</span><span class="disease-ref-badge"
+                                    style="background:rgba(255,107,107,.1);color:#ff6b6b">Bacterial</span>
+                            </div>
+                            <div class="disease-ref-item">
+                                <div class="disease-dot" style="background:#ffb3b3"></div><span
+                                    class="disease-ref-name">Bacterial Gill Disease</span><span
+                                    class="disease-ref-badge"
+                                    style="background:rgba(255,107,107,.1);color:#ff6b6b">Bacterial</span>
+                            </div>
+                            <div class="disease-ref-item">
+                                <div class="disease-dot" style="background:#ffc107"></div><span
+                                    class="disease-ref-name">Saprolegniasis</span><span class="disease-ref-badge"
+                                    style="background:rgba(255,193,7,.1);color:#ffc107">Fungal</span>
+                            </div>
+                            <div class="disease-ref-item">
+                                <div class="disease-dot" style="background:#4fc3f7"></div><span
+                                    class="disease-ref-name">Parasitic Diseases</span><span class="disease-ref-badge"
+                                    style="background:rgba(79,195,247,.1);color:#4fc3f7">Parasitic</span>
+                            </div>
+                            <div class="disease-ref-item">
+                                <div class="disease-dot" style="background:#ce93d8"></div><span
+                                    class="disease-ref-name">White Tail Disease</span><span class="disease-ref-badge"
+                                    style="background:rgba(156,39,176,.1);color:#ce93d8">Viral</span>
+                            </div>
+                            <div class="disease-ref-item">
+                                <div class="disease-dot" style="background:#00c9a7"></div><span
+                                    class="disease-ref-name">Healthy Fish</span><span class="disease-ref-badge"
+                                    style="background:rgba(0,201,167,.1);color:#00c9a7">Healthy</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="feedbackArea" style="display:none;margin-top:12px;border-top:1px solid #eee;padding-top:12px;">
-                    <form method="post" action="{{ url_for('pred.submit_feedback') }}">
-                        <input type="hidden" name="prediction_id" value="{{ prediction_id }}" />
-                        <label>
-                            Was this correct?
-                            <select name="is_corrected">
-                                <option value="false">Yes</option>
-                                <option value="true">No</option>
-                            </select>
-                        </label>
-                        <div style="margin-top:8px">
-                            <label>Correct label (if wrong): <input name="corrected_label" /></label>
+                <div class="accordion-card" id="acc3">
+                    <button class="accordion-trigger" onclick="toggleAcc('acc3')" type="button">
+                        <div class="sb-icon">🧠</div>
+                        <div class="sb-label-wrap">
+                            <div class="sb-title">Model Architecture</div>
+                            <div class="sb-sub">Feature fusion ensemble</div>
                         </div>
-                        <div style="margin-top:8px">
-                            <label>Note: <input name="note" /></label>
+                        <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
+                    <div class="accordion-body">
+                        <div class="model-detail-list">
+                            <div class="model-detail-row"><span class="model-detail-key">Architecture</span><span
+                                    class="model-detail-val teal">Ensemble CNN</span></div>
+                            <div class="model-detail-row"><span class="model-detail-key">Backbones</span><span
+                                    class="model-detail-val">ResNet50 + EfficientNetV2</span></div>
+                            <div class="model-detail-row"><span class="model-detail-key">Fusion Method</span><span
+                                    class="model-detail-val teal">Feature Concatenation</span></div>
+                            <div class="model-detail-row"><span class="model-detail-key">Input Size</span><span
+                                    class="model-detail-val">224 × 224 px</span></div>
+                            <div class="model-detail-row"><span class="model-detail-key">Output Classes</span><span
+                                    class="model-detail-val">7 diseases</span></div>
+                            <div class="model-detail-row"><span class="model-detail-key">Inference Time</span><span
+                                    class="model-detail-val teal">&lt; 2 seconds</span></div>
                         </div>
-                        <div style="margin-top:8px"><button type="submit">Submit feedback</button></div>
-                    </form>
+                    </div>
                 </div>
+
             </div>
-        {% endif %}
+        </div>
     </div>
 
-    <script>
-        const toggle = document.getElementById('toggleFeedback')
-        const feedback = document.getElementById('feedbackArea')
-        if (toggle) toggle.addEventListener('click', () => {
-            if (feedback.style.display === 'none') feedback.style.display = 'block'
-            else feedback.style.display = 'none'
-        })
-    </script>
-{% endblock %}
+    <!-- FOOTER -->
+    {% include 'footer.html' %}
+
+    <script src="../static/js/prediction.js"></script>
+</body>
+
+</html>

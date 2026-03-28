@@ -28,7 +28,7 @@ def predict_disease():
 
         allowed = current_app.config.get('ALLOWED_EXTENSIONS', set())
         if '.' not in image.filename or image.filename.rsplit('.', 1)[1].lower() not in allowed:
-            flash('Invalid file type.', 'error')
+            flash('Invalid file type. Please upload PNG, JPG, JPEG, WEBP or GIF.', 'error')
             return redirect(url_for('pred.predict_get'))
 
         ext = image.filename.rsplit('.', 1)[1].lower()
@@ -48,9 +48,18 @@ def predict_disease():
         img_array = np.expand_dims(img_array, axis=0)
 
         prediction = model.predict(img_array)[0]
+        class_names = current_app.config.get('CLASS_NAMES', [])
+
         top_idx = int(np.argmax(prediction))
-        top_class = current_app.config.get('CLASS_NAMES', [])[top_idx]
+        top_class = class_names[top_idx]
         top_confidence = float(prediction[top_idx])
+
+        # Build sorted all-predictions list for breakdown display
+        all_predictions = sorted(
+            [(class_names[i], float(prediction[i]) * 100) for i in range(len(class_names))],
+            key=lambda x: x[1],
+            reverse=True,
+        )
 
         pred_row = models.Prediction(
             predicted_class=top_class,
@@ -66,14 +75,20 @@ def predict_disease():
             'prediction.html',
             success=True,
             disease=top_class,
-            confidence=f"{top_confidence*100:.2f}%",
+            confidence=f"{top_confidence * 100:.2f}%",
+            confidence_raw=top_confidence,          # raw float for JS animation
+            all_predictions=all_predictions,        # list of (name, pct) for breakdown bars
             prediction_id=pred_row.id,
             image_path=image_path,
-            class_names=current_app.config.get('CLASS_NAMES', []),
+            class_names=class_names,
         )
 
     except Exception as e:
-        return render_template('prediction.html', error=f'Error: {str(e)}'), 500
+        return render_template(
+            'prediction.html',
+            error=f'Error: {str(e)}',
+            class_names=current_app.config.get('CLASS_NAMES', []),
+        ), 500
 
 
 @pred_bp.route('/history', methods=['GET'])
@@ -114,5 +129,5 @@ def submit_feedback():
     db.session.add(fb)
     db.session.commit()
 
-    flash('Feedback submitted.', 'success')
-    return redirect(url_for('pred.history'))
+    flash('Feedback submitted. Thank you!', 'success')
+    return redirect(url_for('pred.predict_get'))
