@@ -1,18 +1,253 @@
-{% extends "base.html" %}
-{% block title %}Admin Login{% endblock %}
-{% block content %}
-<div class="container">
-  <h2>Admin Login</h2>
-  <form method="post" action="{{ url_for('auth.admin_login') }}">
-    <div>
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" required />
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Access — AquaDiag</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+ <link rel="stylesheet" href="../static/css/admin_login.css">
+</head>
+
+<body>
+
+  <div class="ambient">
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="{{ url_for('index') }}">
+      <div class="logo-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <span>Aqua<em>Diag</em></span>
+    </a>
+
+    <div class="nav-status">
+      <span class="dot"></span>
+      RESTRICTED PORTAL
     </div>
-    <div>
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" required />
+
+    <a class="nav-back" href="{{ url_for('index') }}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      BACK
+    </a>
+  </nav>
+
+  <main class="page">
+    <div class="layout">
+
+      <!-- ── LEFT INFO PANEL ── -->
+      <div class="panel-left">
+        <div>
+          <div class="system-badge">Restricted Access</div>
+
+          <h1 class="panel-title">
+            Admin<br/>Control<br/><span class="accent">Terminal</span>
+          </h1>
+
+          <p class="panel-body">
+            This portal is reserved for<br/>
+            authorized administrators only.<br/>
+            All access attempts are logged<br/>
+            and monitored for security.
+          </p>
+
+          <div class="cap-list">
+            <div class="cap-item">
+              <div class="cap-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+              </div>
+              <div class="cap-text">
+                <div class="cap-title">User Management</div>
+                <div class="cap-sub">View, moderate and manage all accounts</div>
+              </div>
+            </div>
+            <div class="cap-item">
+              <div class="cap-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                </svg>
+              </div>
+              <div class="cap-text">
+                <div class="cap-title">Feedback Review</div>
+                <div class="cap-sub">Approve or reject user prediction corrections</div>
+              </div>
+            </div>
+            <div class="cap-item">
+              <div class="cap-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+              </div>
+              <div class="cap-text">
+                <div class="cap-title">Dataset Curation</div>
+                <div class="cap-sub">Manage approved samples for model retraining</div>
+              </div>
+            </div>
+            <div class="cap-item">
+              <div class="cap-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+              </div>
+              <div class="cap-text">
+                <div class="cap-title">Platform Analytics</div>
+                <div class="cap-sub">Monitor diagnosis trends and model performance</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="terminal">
+          <div class="t-line">
+            <span class="t-prompt">sys&gt;</span>
+            <span class="t-cmd">auth --mode admin</span>
+          </div>
+          <div class="t-line">
+            <span class="t-out">▸ Awaiting credentials…</span>
+          </div>
+          <div class="t-line">
+            <span class="t-out">▸ Session secured<span class="t-cursor"></span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LOGIN CARD ── -->
+      <div class="card">
+        <div class="card-corner tl"></div>
+        <div class="card-corner tr"></div>
+        <div class="card-corner bl"></div>
+        <div class="card-corner br"></div>
+
+        <div class="card-eyebrow">
+          <div class="clearance-badge">
+            <span class="badge-dot"></span>
+            Clearance Required
+          </div>
+          <span class="access-level">LVL-9 // ROOT</span>
+        </div>
+
+        <h2 class="card-title">
+          Secure<br/><span class="accent">Admin</span> Login
+        </h2>
+        <p class="card-subtitle">
+          Authenticate with your administrator credentials.<br/>
+          Unauthorized access is prohibited and tracked.
+        </p>
+
+        <div class="divider">
+          <span>credentials</span>
+        </div>
+
+        <!-- Flash messages as modal -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% set cat, msg = messages[0] %}
+            <div id="flashModal" class="modal" aria-hidden="true">
+              <div class="modal-backdrop" data-action="close"></div>
+              <div class="modal-box" role="dialog" aria-modal="true">
+                <div class="modal-body">
+                  <div class="modal-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </div>
+                  <div class="modal-msg">{{ msg }}</div>
+                </div>
+                <button class="modal-close" id="modalCloseBtn">Acknowledge</button>
+              </div>
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form method="post" action="{{ url_for('auth.admin_login') }}" id="adminForm" novalidate>
+
+          <!-- Email -->
+          <div class="field-group">
+            <label class="field-label" for="email">
+              <span class="lbl-num">01</span>
+              Admin Email
+            </label>
+            <div class="field-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2"/>
+                  <path d="M22 7l-10 7L2 7"/>
+                </svg>
+              </span>
+              <input class="field-input"
+                id="email" name="email" type="email"
+                placeholder="admin@aquadiag.io"
+                required autocomplete="email" />
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="field-group">
+            <label class="field-label" for="password">
+              <span class="lbl-num">02</span>
+              Admin Password
+            </label>
+            <div class="field-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+              </span>
+              <input class="field-input"
+                id="password" name="password" type="password"
+                placeholder="••••••••••••"
+                required autocomplete="current-password" />
+              <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password">
+                <svg id="eyeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Authenticate Access
+          </button>
+        </form>
+
+        <div class="sec-warning">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          WARNING: This system is restricted to authorized personnel. All access attempts are logged with IP, timestamp, and session data. Unauthorized access may result in legal consequences.
+        </div>
+
+        <div class="card-footer">
+          <a href="{{ url_for('auth.login') }}">← User Login</a>
+          <span class="sep">|</span>
+          <span>AquaDiag Admin Portal</span>
+          <span class="sep">|</span>
+          <a href="{{ url_for('index') }}">Home</a>
+        </div>
+      </div>
+
     </div>
-    <button type="submit">Login as Admin</button>
-  </form>
-</div>
-{% endblock %}
+  </main>
+  <script src="../static/js/admin_login.js"></script>
+
+</body>
+</html>
