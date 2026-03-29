@@ -1,50 +1,448 @@
-{% extends "base.html" %}
-{% block title %}Admin{% endblock %}
-{% block content %}
-<div class="container">
-  <h2>Admin Panel</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — AquaDiag</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../static/css/admin.css" />
+</head>
+<body>
 
-  <h3>Feedback</h3>
-  <div style="margin-bottom:8px">
-    <strong>Filter:</strong>
-    <a href="{{ url_for('admin.admin_panel') }}" {% if status=='all' %}style="font-weight:bold"{% endif %}>All</a>
-    |
-    <a href="{{ url_for('admin.admin_panel', status='correct') }}" {% if status=='correct' %}style="font-weight:bold"{% endif %}>Correct</a>
-    |
-    <a href="{{ url_for('admin.admin_panel', status='wrong') }}" {% if status=='wrong' %}style="font-weight:bold"{% endif %}>Wrong</a>
-  </div>
-  {% if feedback_items %}
-    <ul>
-    {% for fb in feedback_items %}
-      <li style="margin-bottom:12px;border-bottom:1px solid #eee;padding-bottom:8px;">
-        {% if fb.prediction %}
-          <img src="/{{ fb.prediction.image_path }}" style="height:80px;vertical-align:middle;margin-right:8px;" />
-        {% endif %}
-        <div style="display:inline-block;vertical-align:middle;max-width:70%">
-          <div><strong>Pred:</strong> {{ fb.prediction.predicted_class if fb.prediction else 'N/A' }} — <strong>Corrected:</strong> {{ fb.corrected_label }}</div>
-          <div style="color:#666;">Submitted by user id {{ fb.user_id }} on {{ fb.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-          <p>{{ fb.note }}</p>
+<div class="ambient">
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+</div>
+
+<!-- ═══════ FLASH MODAL ═══════ -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% set cat, msg = messages[0] %}
+    <div id="flashModal" style="display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;background:rgba(4,8,15,.75);backdrop-filter:blur(6px);" aria-hidden="true">
+      <div style="position:relative;z-index:1001;width:92%;max-width:420px;background:var(--card);border:1px solid rgba(220,38,38,.3);border-radius:10px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.7);">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent);border-radius:10px 10px 0 0;"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div style="width:36px;height:36px;border-radius:7px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            {% if cat == 'success' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c9a7" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            {% else %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            {% endif %}
+          </div>
+          <div style="font-family:var(--mono);font-size:.78rem;color:var(--white);line-height:1.5;">{{ msg }}</div>
         </div>
-        <div style="float:right">
-          {% if not fb.handled %}
-            <form method="post" action="{{ url_for('admin.approve_feedback', feedback_id=fb.id) }}" style="display:inline-block;">
-              <input name="split" value="train" hidden />
-              <button type="submit">Approve</button>
-            </form>
-            <form method="post" action="{{ url_for('admin.reject_feedback', feedback_id=fb.id) }}" style="display:inline-block;">
-              <button type="submit">Reject</button>
-            </form>
+        <button id="modalCloseBtn" data-action="close"
+          style="width:100%;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:var(--red);border-radius:6px;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:9px;cursor:pointer;">
+          Acknowledge
+        </button>
+      </div>
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- ═══════ NAVBAR ═══════ -->
+<nav>
+  <a class="nav-logo" href="{{ url_for('index') }}">
+    <div class="logo-icon">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    Aqua<em>Diag</em>
+  </a>
+
+  <div class="nav-center">
+    <a class="nav-pill active" href="{{ url_for('admin.admin_panel') }}">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      Feedback
+    </a>
+    <a class="nav-pill" href="{{ url_for('pred.predict_get') }}">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:4px"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      Classify
+    </a>
+  </div>
+
+  <div class="nav-right">
+    <div class="nav-user">
+      <span class="u-dot"></span>
+      {{ current_user.username }}
+    </div>
+    <div class="nav-status">
+      <span class="dot"></span>ADMIN
+    </div>
+    <a class="nav-logout" href="{{ url_for('auth.logout') }}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+      </svg>
+      Logout
+    </a>
+  </div>
+</nav>
+
+<!-- ═══════ PAGE ═══════ -->
+<div class="admin-page">
+
+  <!-- Flash banners (inline, for cases without modal) -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+      <div class="flash-banner {{ cat }}">
+        {% if cat == 'success' %}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        {% else %}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>{% endif %}
+        {{ msg }}
+      </div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <div class="page-eyebrow"><span class="badge-dot"></span> Control Panel</div>
+      <h1 class="page-title">Feedback <span class="accent">Review</span></h1>
+      <p class="page-subtitle">Manage user-submitted prediction corrections and build a cleaner dataset.</p>
+    </div>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="stats-strip">
+      <div class="stat-card s-other">
+        <div class="stat-icon other">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7h18M3 12h18M3 17h18"/>
+          </svg>
+        </div>
+        <div class="stat-body">
+          <div class="stat-val other">{{ stats.total }}</div>
+          <div class="stat-lbl">Total Feedback</div>
+        </div>
+      </div>
+    <div class="stat-card s-amber">
+      <div class="stat-icon amber">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+        </svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-val amber">{{ stats.unreviewed }}</div>
+        <div class="stat-lbl">Unreviewed</div>
+      </div>
+    </div>
+    <div class="stat-card s-wrong">
+      <div class="stat-icon wrong">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+          <path d="M15 9l-6 6M9 9l6 6" stroke-width="2.2"/>
+        </svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-val wrong">{{ stats.wrong }}</div>
+        <div class="stat-lbl">Wrong Predictions</div>
+      </div>
+    </div>
+    <div class="stat-card s-green">
+      <div class="stat-icon green">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-val green">{{ stats.reviewed }}</div>
+        <div class="stat-lbl">Reviewed</div>
+      </div>
+    </div>
+    <div class="stat-card s-info">
+      <div class="stat-icon info">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="7" cy="7" r="2"/>
+          <circle cx="17" cy="17" r="2"/>
+          <line x1="19" y1="5" x2="5" y2="19"/>
+        </svg>
+      </div>
+      <div class="stat-body">
+        <div class="stat-val info">
+          {% if stats.avg_confidence is defined and stats.avg_confidence is not none %}
+            {% set ac = stats.avg_confidence %}
+            {% if ac > 1 %}
+              {{ '%.2f' % ac }}%
+            {% else %}
+              {{ '%.2f' % (ac * 100) }}%
+            {% endif %}
           {% else %}
-            <em>Handled</em>
+            —
           {% endif %}
         </div>
-      </li>
-    {% endfor %}
-    </ul>
+        <div class="stat-lbl">Avg Confidence</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+
+    <!-- Review status filter -->
+    <div class="filter-group">
+      <span class="filter-label">Status</span>
+      <a class="filter-chip {% if reviewed=='all' %}active{% endif %}"
+         href="{{ url_for('admin.admin_panel', reviewed='all', status=status) }}">All</a>
+      <a class="filter-chip {% if reviewed=='unreviewed' %}active{% endif %}"
+         href="{{ url_for('admin.admin_panel', reviewed='unreviewed', status=status) }}">Unreviewed</a>
+      <a class="filter-chip {% if reviewed=='reviewed' %}active-teal{% endif %}"
+         href="{{ url_for('admin.admin_panel', reviewed='reviewed', status=status) }}">Reviewed</a>
+    </div>
+
+    <div class="filter-sep"></div>
+
+    <!-- Prediction correctness filter -->
+    <div class="filter-group">
+      <span class="filter-label">Type</span>
+      <a class="filter-chip {% if status=='all' %}active{% endif %}"
+         href="{{ url_for('admin.admin_panel', status='all', reviewed=reviewed) }}">All</a>
+      <a class="filter-chip {% if status=='correct' %}active{% endif %}"
+         href="{{ url_for('admin.admin_panel', status='correct', reviewed=reviewed) }}">Correct</a>
+      <a class="filter-chip {% if status=='wrong' %}active{% endif %}"
+         href="{{ url_for('admin.admin_panel', status='wrong', reviewed=reviewed) }}">Wrong</a>
+    </div>
+
+    <!-- Search -->
+    <div class="toolbar-right">
+      <div class="search-wrap">
+        <span class="search-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </span>
+        <input class="search-input" id="fbSearch" type="text"
+               placeholder="Search feedback…" autocomplete="off" />
+      </div>
+    </div>
+  </div>
+
+  {% if feedback_items %}
+
+    <!-- Results count -->
+    <div class="results-info" id="resultsCount">
+      Showing <span>{{ feedback_items|length }}</span> feedback item{{ 's' if feedback_items|length != 1 else '' }}
+    </div>
+
+    <div class="no-search-results" id="noSearchResults">
+      No items match your search.
+    </div>
+
+    <!-- Feedback list -->
+    <div class="feedback-list" id="fbList">
+      {% for fb in feedback_items %}
+      {% set pred = fb.prediction %}
+      {% set is_wrong = fb.is_corrected %}
+
+      <div class="fb-card {% if is_wrong %}fb-wrong{% else %}fb-correct{% endif %} {% if fb.handled %}fb-handled{% endif %}"
+           data-search="{{ (pred.predicted_class if pred else '') }} {{ fb.corrected_label or '' }} {{ fb.note or '' }} {{ (pred.model_used if pred else '') }}"
+           id="fb-{{ fb.id }}">
+
+        <div class="fb-card-main">
+
+          <!-- Image + download -->
+          <div class="fb-img-block">
+            {% if pred and pred.image_path %}
+              <img class="fb-img" src="/{{ pred.image_path }}" alt="{{ pred.predicted_class }}" loading="lazy" />
+              <a class="fb-download-btn" href="/{{ pred.image_path }}" download
+                 title="Download image" aria-label="Download fish image">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </a>
+            {% else %}
+              <div class="fb-img-placeholder">🐟</div>
+            {% endif %}
+          </div>
+
+          <!-- Info -->
+          <div class="fb-info">
+
+            <div class="fb-top-row">
+              <div>
+                <div class="fb-prediction">
+                  {{ pred.predicted_class if pred else 'Prediction Deleted' }}
+                </div>
+                {% if is_wrong and fb.corrected_label %}
+                  <div class="fb-correction">
+                    Corrected<span class="arrow">→</span><span class="new-label">{{ fb.corrected_label }}</span>
+                  </div>
+                {% endif %}
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                {% if fb.handled %}
+                  <span class="status-badge badge-handled">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle;margin-right:2px"><path d="M20 6L9 17l-5-5"/></svg>
+                    Reviewed
+                  </span>
+                {% endif %}
+                <span class="status-badge {% if is_wrong %}badge-wrong{% else %}badge-correct{% endif %}">
+                  {{ 'Wrong Pred' if is_wrong else 'Correct Pred' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Model chip -->
+            {% if pred and pred.model_used %}
+              <div style="margin-bottom:7px;">
+                <span class="model-chip">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                  Model: <span class="model-name">{{ pred.model_used }}</span>
+                </span>
+              </div>
+            {% endif %}
+
+            <!-- Meta -->
+            <div class="fb-meta">
+              <div class="fb-meta-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                User <span class="val">#{{ fb.user_id }}</span>
+              </div>
+              <div class="fb-meta-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+                <span class="val">{{ fb.created_at.strftime('%b %d, %Y — %H:%M') }}</span>
+              </div>
+              {% if pred %}
+              <div class="fb-meta-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                Confidence <span class="val">{{ '%.1f' % (pred.confidence * 100) }}%</span>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Note -->
+            {% if fb.note %}
+              <div class="fb-note">{{ fb.note }}</div>
+            {% endif %}
+
+          </div>
+        </div>
+
+        <!-- Action row -->
+        <div class="fb-actions">
+          {% if not fb.handled %}
+            <span class="fb-actions-label">Action</span>
+            <form method="post" action="{{ url_for('admin.approve_feedback', feedback_id=fb.id) }}" style="display:inline">
+              <input type="hidden" name="split"    value="train" />
+              <input type="hidden" name="status"   value="{{ status }}" />
+              <input type="hidden" name="reviewed" value="{{ reviewed }}" />
+              <button type="submit" class="btn-approve">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                Approve
+              </button>
+            </form>
+            <form method="post" action="{{ url_for('admin.reject_feedback', feedback_id=fb.id) }}" class="reject-form" style="display:inline">
+              <input type="hidden" name="status"   value="{{ status }}" />
+              <input type="hidden" name="reviewed" value="{{ reviewed }}" />
+              <button type="submit" class="btn-reject">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+                Reject
+              </button>
+            </form>
+          {% else %}
+            <span class="btn-handled">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              Handled
+            </span>
+          {% endif %}
+        </div>
+
+      </div><!-- /fb-card -->
+      {% endfor %}
+    </div><!-- /fbList -->
+
+    {% if pagination and pagination.total_pages > 1 %}
+    <div class="load-more-wrap" aria-label="Admin pagination" style="margin-top:14px;">
+      {% if pagination.has_prev %}
+        <a class="btn-load-more" href="{{ url_for('admin.admin_panel', page=pagination.page-1, status=status, reviewed=reviewed) }}">Previous</a>
+      {% endif %}
+
+      {% set start_page = [1, pagination.page - 1] | max %}
+      {% set end_page = [pagination.total_pages, pagination.page + 1] | min %}
+
+      {% if start_page > 1 %}
+        <a class="btn-load-more" href="{{ url_for('admin.admin_panel', page=1, status=status, reviewed=reviewed) }}">1</a>
+        {% if start_page > 2 %}
+          <span class="btn-load-more" style="cursor:default;opacity:.75;">…</span>
+        {% endif %}
+      {% endif %}
+
+      {% for p in range(start_page, end_page + 1) %}
+        {% if p == pagination.page %}
+          <span class="btn-load-more" style="border-color:var(--teal);color:var(--teal);background:rgba(0,201,167,.08);cursor:default;">{{ p }}</span>
+        {% else %}
+          <a class="btn-load-more" href="{{ url_for('admin.admin_panel', page=p, status=status, reviewed=reviewed) }}">{{ p }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if end_page < pagination.total_pages %}
+        {% if end_page < pagination.total_pages - 1 %}
+          <span class="btn-load-more" style="cursor:default;opacity:.75;">…</span>
+        {% endif %}
+        <a class="btn-load-more" href="{{ url_for('admin.admin_panel', page=pagination.total_pages, status=status, reviewed=reviewed) }}">{{ pagination.total_pages }}</a>
+      {% endif %}
+
+      {% if pagination.has_next %}
+        <a class="btn-load-more" href="{{ url_for('admin.admin_panel', page=pagination.page+1, status=status, reviewed=reviewed) }}">Next</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
   {% else %}
-    <p>No feedback items.</p>
+
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h2 class="empty-title">No Feedback Found</h2>
+      <p class="empty-sub">
+        {% if reviewed == 'unreviewed' %}No pending feedback items to review.
+        {% elif reviewed == 'reviewed'  %}No reviewed items for this filter.
+        {% else %}No feedback has been submitted yet.{% endif %}
+      </p>
+    </div>
+
   {% endif %}
 
-  <!-- Admin view restricted to feedback only -->
-</div>
-{% endblock %}
+</div><!-- /admin-page -->
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer>
+  <a class="footer-logo" href="{{ url_for('index') }}">
+    <div class="f-icon">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    Aqua<em>Diag</em>
+  </a>
+  <div class="footer-links">
+    <a href="{{ url_for('admin.admin_panel') }}">Dashboard</a>
+    <a href="{{ url_for('pred.predict_get') }}">Classify</a>
+    <a href="{{ url_for('pred.history') }}">History</a>
+    <a href="{{ url_for('auth.logout') }}">Logout</a>
+  </div>
+  <span class="footer-note">
+    © 2026
+    <a href="https://mahfujr403.github.io/portfolio/" target="_blank">Md. Mahfujur Rahman</a>
+    — Admin Portal
+  </span>
+</footer>
+
+<script src="../static/js/admin.js"></script>
+</body>
+</html>
