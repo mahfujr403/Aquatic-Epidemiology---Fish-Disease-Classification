@@ -122,7 +122,11 @@
                         <div class="result-divider">Result</div>
 
                         <div class="result-img-wrap">
-                            <img src="/{{ image_path }}" alt="Analyzed fish" loading="lazy" />
+                                                        {% if image_path and image_path.startswith('http') %}
+                                                            <img src="{{ image_path }}" alt="Analyzed fish" loading="lazy" />
+                                                        {% else %}
+                                                            <img src="/{{ image_path }}" alt="Analyzed fish" loading="lazy" />
+                                                        {% endif %}
                             <div class="result-img-badge">Analyzed ✓</div>
                         </div>
 

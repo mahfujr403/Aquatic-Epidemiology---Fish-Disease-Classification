@@ -88,6 +88,12 @@ app.config['CLASS_NAMES'] = class_names
 app.config['UPLOAD_DIR'] = UPLOAD_DIR
 app.config['ALLOWED_EXTENSIONS'] = ALLOWED_EXTENSIONS
 
+# Cloudinary configuration (read from environment if set)
+app.config['CLOUDINARY_CLOUD_NAME'] = os.getenv('CLOUDINARY_CLOUD_NAME')
+app.config['CLOUDINARY_API_KEY'] = os.getenv('CLOUDINARY_API_KEY')
+app.config['CLOUDINARY_API_SECRET'] = os.getenv('CLOUDINARY_API_SECRET')
+app.config['CLOUDINARY_FOLDER'] = os.getenv('CLOUDINARY_FOLDER', 'aquadiag/uploads')
+
 
 #############
 # DB models live in aquadiag.models (package)

@@ -8,3 +8,4 @@ Werkzeug==2.2.4
 psycopg2-binary>=2.9
 Pillow>=9.0.0
 python-dotenv>=1.0
+cloudinary>=1.32.0

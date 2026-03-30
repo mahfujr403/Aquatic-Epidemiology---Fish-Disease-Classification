@@ -241,8 +241,12 @@
 
           <!-- Image + download -->
           <div class="fb-img-block">
-            {% if pred and pred.image_path %}
-              <img class="fb-img" src="/{{ pred.image_path }}" alt="{{ pred.predicted_class }}" loading="lazy" />
+              {% if pred and pred.image_path %}
+              {% if pred.image_path.startswith('http') %}
+                <img class="fb-img" src="{{ pred.image_path }}" alt="{{ pred.predicted_class }}" loading="lazy" />
+              {% else %}
+                <img class="fb-img" src="/{{ pred.image_path }}" alt="{{ pred.predicted_class }}" loading="lazy" />
+              {% endif %}
               <a class="fb-download-btn" href="/{{ pred.image_path }}" download
                  title="Download image" aria-label="Download fish image">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

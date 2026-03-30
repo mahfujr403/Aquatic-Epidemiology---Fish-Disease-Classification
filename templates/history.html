@@ -171,9 +171,11 @@
           <div class="hist-card-main" onclick="toggleCard({{ it.id }})">
 
             {% if it.image_path %}
-              <img class="hist-thumb"
-                   src="/{{ it.image_path }}" alt="{{ it.predicted_class }}"
-                   loading="lazy" />
+              {% if it.image_path.startswith('http') %}
+                <img class="hist-thumb" src="{{ it.image_path }}" alt="{{ it.predicted_class }}" loading="lazy" />
+              {% else %}
+                <img class="hist-thumb" src="/{{ it.image_path }}" alt="{{ it.predicted_class }}" loading="lazy" />
+              {% endif %}
             {% else %}
               <div class="hist-thumb-placeholder">🐟</div>
             {% endif %}
@@ -213,7 +215,11 @@
 
               <!-- Full image -->
               {% if it.image_path %}
-                <img class="hist-full-img" src="/{{ it.image_path }}" alt="{{ it.predicted_class }}" loading="lazy" />
+                {% if it.image_path.startswith('http') %}
+                  <img class="hist-full-img" src="{{ it.image_path }}" alt="{{ it.predicted_class }}" loading="lazy" />
+                {% else %}
+                  <img class="hist-full-img" src="/{{ it.image_path }}" alt="{{ it.predicted_class }}" loading="lazy" />
+                {% endif %}
               {% endif %}
 
               <!-- Model info -->

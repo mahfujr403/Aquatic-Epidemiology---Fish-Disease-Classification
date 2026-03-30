@@ -8,6 +8,13 @@ import math
 from sqlalchemy import func
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
+from io import BytesIO
+from PIL import Image
+try:
+    import cloudinary
+    import cloudinary.uploader
+except ImportError:
+    cloudinary = None
 
 pred_bp = Blueprint('pred', __name__)
 
@@ -45,21 +52,19 @@ def predict_disease():
             flash('Invalid file type. Please upload PNG, JPG, JPEG, WEBP or GIF.', 'error')
             return redirect(url_for('pred.predict_get'))
 
-        ext = image.filename.rsplit('.', 1)[1].lower()
-        unique_name = f"{uuid.uuid4()}.{ext}"
-        upload_dir = current_app.config.get('UPLOAD_DIR', os.path.join('static', 'uploads'))
-        os.makedirs(upload_dir, exist_ok=True)
-        image_path = os.path.join(upload_dir, unique_name)
-        image.save(image_path)
+        # read file bytes once and reuse for prediction + upload
+        file_bytes = image.read()
+
+        # prepare image array for model prediction (in-memory)
+        pil_img = Image.open(BytesIO(file_bytes)).convert('RGB')
+        pil_img = pil_img.resize((224, 224))
+        img_array = img_to_array(pil_img)
+        img_array = np.expand_dims(img_array, axis=0)
 
         model = current_app.config.get('MODEL')
         if model is None:
             flash('Model not available on server.', 'error')
             return redirect(url_for('pred.predict_get'))
-
-        img = load_img(image_path, target_size=(224, 224))
-        img_array = img_to_array(img)
-        img_array = np.expand_dims(img_array, axis=0)
 
         prediction = model.predict(img_array)[0]
         class_names = current_app.config.get('CLASS_NAMES', [])
@@ -75,11 +80,45 @@ def predict_disease():
             reverse=True,
         )
 
+        # attempt to upload original file bytes to Cloudinary; fall back to saving locally
+        image_url = None
+        try:
+            # configure cloudinary from app config if provided and module is available
+            cloudinary_cloud = current_app.config.get('CLOUDINARY_CLOUD_NAME')
+            cloudinary_key = current_app.config.get('CLOUDINARY_API_KEY')
+            cloudinary_secret = current_app.config.get('CLOUDINARY_API_SECRET')
+            if cloudinary and cloudinary_cloud and cloudinary_key and cloudinary_secret:
+                try:
+                    # ensure cloud name is a string
+                    cloudinary.config(cloud_name=str(cloudinary_cloud), api_key=str(cloudinary_key), api_secret=str(cloudinary_secret), secure=True)
+                    current_app.logger.info('Attempting Cloudinary upload')
+                    # upload bytes
+                    res = cloudinary.uploader.upload(BytesIO(file_bytes), folder=current_app.config.get('CLOUDINARY_FOLDER', 'aquadiag/uploads'), use_filename=True, unique_filename=False)
+                    image_url = res.get('secure_url')
+                    current_app.logger.info(f'Cloudinary upload succeeded: {image_url}')
+                except Exception as exc:
+                    current_app.logger.exception('Cloudinary upload failed')
+                    image_url = None
+        except Exception:
+            image_url = None
+
+        if not image_url:
+            # fallback: write locally (like before)
+            ext = image.filename.rsplit('.', 1)[1].lower()
+            unique_name = f"{uuid.uuid4()}.{ext}"
+            upload_dir = current_app.config.get('UPLOAD_DIR', os.path.join('static', 'uploads'))
+            os.makedirs(upload_dir, exist_ok=True)
+            local_path = os.path.join(upload_dir, unique_name)
+            with open(local_path, 'wb') as f:
+                f.write(file_bytes)
+            # store path relative to server root for templates that expect '/path'
+            image_url = local_path.replace('\\', '/')
+
         pred_row = models.Prediction(
             predicted_class=top_class,
             confidence=top_confidence,
             model_used=os.path.basename(current_app.config.get('MODEL_PATH', '')),
-            image_path=image_path,
+            image_path=image_url,
             user_id=current_user.id,
         )
         db.session.add(pred_row)
@@ -93,7 +132,7 @@ def predict_disease():
             confidence_raw=top_confidence,          # raw float for JS animation
             all_predictions=all_predictions,        # list of (name, pct) for breakdown bars
             prediction_id=pred_row.id,
-            image_path=image_path,
+            image_path=image_url,
             class_names=class_names,
         )
 
