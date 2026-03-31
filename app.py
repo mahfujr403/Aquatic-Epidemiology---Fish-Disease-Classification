@@ -161,7 +161,7 @@ def index():
 @login_required
 @admin_required
 def admin_panel_alias():
-    return admin_panel()
+    return redirect(url_for("admin.admin_panel"))
 
 
 
