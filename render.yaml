@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: fish-disease-app
+    env: python
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    plan: free
+    runtime: python-3.11.9
