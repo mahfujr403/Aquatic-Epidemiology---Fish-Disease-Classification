@@ -65,6 +65,15 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
 # Model & classes
+from scripts.download_models_gdrive import download_models
+
+# Attempt to download models from Google Drive (if MODEL_DRIVE_MAP env var is set)
+try:
+    download_models()
+except Exception:
+    # non-fatal; proceed and let load_model fail if models are missing
+    pass
+
 MODEL_PATH = "models/ensemble-ResNet50-EfficientNetV2_model.h5"
 if os.path.exists(MODEL_PATH):
     model = load_model(MODEL_PATH)
