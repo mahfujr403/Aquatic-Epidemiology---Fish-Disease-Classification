@@ -25,9 +25,8 @@ from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
-from tensorflow.keras.models import load_model
-from tensorflow.keras.utils import custom_object_scope
+from keras.utils import custom_object_scope
+from keras.models import load_model
 import numpy as np
 
 # App setup
@@ -48,7 +47,7 @@ from aquadiag import db, login_manager
 # Initialize extensions from aquadiag package
 db.init_app(app)
 login_manager.init_app(app)
-login_manager.login_view = "auth.login"
+setattr(login_manager, "login_view", "auth.login")
 
 # import modular routes and models from package
 from aquadiag import models
@@ -76,8 +75,8 @@ except Exception:
     # non-fatal; proceed and let load_model fail if models are missing
     pass
 
-from tensorflow.keras.layers import InputLayer as _InputLayer
-from tensorflow.keras.mixed_precision import Policy as _Policy
+from keras.layers import InputLayer as _InputLayer
+from keras.mixed_precision import Policy as _Policy
 
 
 class _CompatInputLayer(_InputLayer):
@@ -135,7 +134,7 @@ def _load_prediction_model(model_path):
     except Exception as primary_exc:
         try:
             import h5py
-            from tensorflow.keras.models import model_from_json
+            from keras.models import model_from_json
 
             with h5py.File(model_path, "r") as handle:
                 raw_config = handle.attrs.get("model_config")

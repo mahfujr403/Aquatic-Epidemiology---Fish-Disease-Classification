@@ -6,7 +6,7 @@ import os
 import uuid
 import math
 from sqlalchemy import func
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from keras.utils import load_img, img_to_array
 import numpy as np
 from io import BytesIO
 from PIL import Image
@@ -48,7 +48,8 @@ def predict_disease():
             return redirect(url_for('pred.predict_get'))
 
         allowed = current_app.config.get('ALLOWED_EXTENSIONS', set())
-        if '.' not in image.filename or image.filename.rsplit('.', 1)[1].lower() not in allowed:
+        filename = (image.filename or '').strip()
+        if not filename or '.' not in filename or filename.rsplit('.', 1)[1].lower() not in allowed:
             flash('Invalid file type. Please upload PNG, JPG, JPEG, WEBP or GIF.', 'error')
             return redirect(url_for('pred.predict_get'))
 
@@ -104,7 +105,7 @@ def predict_disease():
 
         if not image_url:
             # fallback: write locally (like before)
-            ext = image.filename.rsplit('.', 1)[1].lower()
+            ext = filename.rsplit('.', 1)[1].lower()
             unique_name = f"{uuid.uuid4()}.{ext}"
             upload_dir = current_app.config.get('UPLOAD_DIR', os.path.join('static', 'uploads'))
             os.makedirs(upload_dir, exist_ok=True)
