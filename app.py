@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 from datetime import datetime
 from functools import wraps
@@ -74,55 +75,77 @@ except Exception:
     # non-fatal; proceed and let load_model fail if models are missing
     pass
 
-# MODEL_PATH = "models/ensemble-ResNet50-EfficientNetV2_model.h5"
-# if os.path.exists(MODEL_PATH):
-#     model = load_model(MODEL_PATH)
-# else:
-#     model = None
-
-
-
-
-# ── PASTE THIS BLOCK in app.py to replace the existing model-loading section ──
-# Replace everything from "MODEL_PATH = ..." down to "app.config['MODEL'] = model"
- 
 from tensorflow.keras.layers import InputLayer as _InputLayer
-from tensorflow.keras.models import load_model
- 
- 
+
+
 class _CompatInputLayer(_InputLayer):
-    """
-    Backward-compatibility shim.
-    Older Keras serialised InputLayer configs with 'batch_shape';
-    newer Keras renamed / removed that argument.  This subclass
-    transparently converts the old key so loading never fails.
-    """
+    """Backward-compatible InputLayer for older H5 configs."""
+
     def __init__(self, *args, **kwargs):
         if "batch_shape" in kwargs:
             kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
         super().__init__(*args, **kwargs)
- 
+
     @classmethod
     def from_config(cls, config):
         config = config.copy()
         if "batch_shape" in config:
             config["batch_input_shape"] = config.pop("batch_shape")
         return super().from_config(config)
- 
- 
-MODEL_PATH = "models/ensemble-ResNet50-EfficientNetV2_model.h5"
- 
-if os.path.exists(MODEL_PATH):
+
+
+def _sanitize_keras_config(value):
+    """Convert serialized Keras dtype policy objects to plain dtype names."""
+    if isinstance(value, dict):
+        class_name = value.get("class_name")
+        config = value.get("config")
+        if class_name == "DTypePolicy" and isinstance(config, dict):
+            return config.get("name", "float32")
+        return {key: _sanitize_keras_config(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_keras_config(item) for item in value]
+    return value
+
+
+def _load_prediction_model(model_path):
+    """Load the saved fish disease model with compatibility fallbacks."""
+    if not os.path.exists(model_path):
+        return None
+
+    custom_objects = {"InputLayer": _CompatInputLayer}
+
     try:
-        model = load_model(
-            MODEL_PATH,
-            custom_objects={"InputLayer": _CompatInputLayer},
-        )
-    except Exception as exc:
-        print(f"[WARNING] Could not load model: {exc}")
-        model = None
-else:
-    model = None
+        return load_model(model_path, custom_objects=custom_objects, compile=False)
+    except Exception as primary_exc:
+        try:
+            import h5py
+            from tensorflow.keras.models import model_from_json
+
+            with h5py.File(model_path, "r") as handle:
+                raw_config = handle.attrs.get("model_config")
+                if not raw_config:
+                    raise ValueError("Missing model_config in H5 file")
+
+            if isinstance(raw_config, bytes):
+                raw_config = raw_config.decode("utf-8")
+
+            model_config = json.loads(raw_config)
+            sanitized_config = _sanitize_keras_config(model_config)
+            model = model_from_json(
+                json.dumps(sanitized_config),
+                custom_objects=custom_objects,
+            )
+            model.load_weights(model_path)
+            print("[INFO] Loaded model via sanitized H5 fallback.")
+            return model
+        except Exception as fallback_exc:
+            print(f"[WARNING] Could not load model: {primary_exc}")
+            print(f"[WARNING] Sanitized fallback also failed: {fallback_exc}")
+            return None
+
+
+MODEL_PATH = "models/ensemble-ResNet50-EfficientNetV2_model.h5"
+model = _load_prediction_model(MODEL_PATH)
 
 
 class_names = [

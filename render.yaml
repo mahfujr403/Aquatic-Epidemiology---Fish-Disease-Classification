@@ -4,6 +4,6 @@ services:
     env: python
     region: singapore
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
+    startCommand: gunicorn app:app
     plan: free
     runtime: python-3.11.9
