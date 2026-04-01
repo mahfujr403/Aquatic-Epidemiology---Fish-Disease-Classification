@@ -27,6 +27,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from tensorflow.keras.models import load_model
+from tensorflow.keras.utils import custom_object_scope
 import numpy as np
 
 # App setup
@@ -76,6 +77,7 @@ except Exception:
     pass
 
 from tensorflow.keras.layers import InputLayer as _InputLayer
+from tensorflow.keras.mixed_precision import Policy as _Policy
 
 
 class _CompatInputLayer(_InputLayer):
@@ -92,6 +94,16 @@ class _CompatInputLayer(_InputLayer):
         if "batch_shape" in config:
             config["batch_input_shape"] = config.pop("batch_shape")
         return super().from_config(config)
+
+
+class _CompatDTypePolicy(_Policy):
+    """Compatibility shim for saved Keras dtype policy configs."""
+
+    @classmethod
+    def from_config(cls, config):
+        if isinstance(config, dict):
+            return cls(config.get("name", "float32"))
+        return cls(config)
 
 
 def _sanitize_keras_config(value):
@@ -112,7 +124,11 @@ def _load_prediction_model(model_path):
     if not os.path.exists(model_path):
         return None
 
-    custom_objects = {"InputLayer": _CompatInputLayer}
+    custom_objects = {
+        "InputLayer": _CompatInputLayer,
+        "DTypePolicy": _CompatDTypePolicy,
+        "Policy": _CompatDTypePolicy,
+    }
 
     try:
         return load_model(model_path, custom_objects=custom_objects, compile=False)
@@ -131,10 +147,11 @@ def _load_prediction_model(model_path):
 
             model_config = json.loads(raw_config)
             sanitized_config = _sanitize_keras_config(model_config)
-            model = model_from_json(
-                json.dumps(sanitized_config),
-                custom_objects=custom_objects,
-            )
+            with custom_object_scope(custom_objects):
+                model = model_from_json(
+                    json.dumps(sanitized_config),
+                    custom_objects=custom_objects,
+                )
             model.load_weights(model_path)
             print("[INFO] Loaded model via sanitized H5 fallback.")
             return model
