@@ -74,11 +74,56 @@ except Exception:
     # non-fatal; proceed and let load_model fail if models are missing
     pass
 
+# MODEL_PATH = "models/ensemble-ResNet50-EfficientNetV2_model.h5"
+# if os.path.exists(MODEL_PATH):
+#     model = load_model(MODEL_PATH)
+# else:
+#     model = None
+
+
+
+
+# ── PASTE THIS BLOCK in app.py to replace the existing model-loading section ──
+# Replace everything from "MODEL_PATH = ..." down to "app.config['MODEL'] = model"
+ 
+from tensorflow.keras.layers import InputLayer as _InputLayer
+from tensorflow.keras.models import load_model
+ 
+ 
+class _CompatInputLayer(_InputLayer):
+    """
+    Backward-compatibility shim.
+    Older Keras serialised InputLayer configs with 'batch_shape';
+    newer Keras renamed / removed that argument.  This subclass
+    transparently converts the old key so loading never fails.
+    """
+    def __init__(self, *args, **kwargs):
+        if "batch_shape" in kwargs:
+            kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
+        super().__init__(*args, **kwargs)
+ 
+    @classmethod
+    def from_config(cls, config):
+        config = config.copy()
+        if "batch_shape" in config:
+            config["batch_input_shape"] = config.pop("batch_shape")
+        return super().from_config(config)
+ 
+ 
 MODEL_PATH = "models/ensemble-ResNet50-EfficientNetV2_model.h5"
+ 
 if os.path.exists(MODEL_PATH):
-    model = load_model(MODEL_PATH)
+    try:
+        model = load_model(
+            MODEL_PATH,
+            custom_objects={"InputLayer": _CompatInputLayer},
+        )
+    except Exception as exc:
+        print(f"[WARNING] Could not load model: {exc}")
+        model = None
 else:
     model = None
+
 
 class_names = [
     "Bacterial Red disease",
