@@ -1,24 +1,10 @@
-import os
-import tensorflow as tf
 from huggingface_hub import hf_hub_download
+import tensorflow as tf
 
-from app import HF_MODEL_FILE, HF_MODEL_ID
+MODEL_PATH = hf_hub_download(
+    repo_id="mahfujr403/Fusion-ResNet50-EfficientNetV2_model",
+    filename="Fusion-ResNet50-EfficientNetV2_model.tflite"
+)
 
-MODEL_REPO = "mahfujr403/Fusion-ResNet50-EfficientNetV2_model"
-MODEL_FILE = "Fusion-ResNet50-EfficientNetV2_model.keras"
-
-def load_model_from_hf():
-    print("⬇️ Downloading model from HuggingFace...")
-
-    model_path = hf_hub_download(
-        repo_id=HF_MODEL_ID,
-        filename=HF_MODEL_FILE,
-        repo_type="model"
-    )
-
-    print("📦 Model downloaded at:", model_path)
-
-    model = tf.keras.models.load_model(model_path, compile=False)
-
-    print("✅ Model loaded successfully")
-    return model
+interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()

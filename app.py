@@ -64,7 +64,7 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 HF_MODEL_ID = os.getenv("HF_MODEL_ID", "mahfujr403/Fusion-ResNet50-EfficientNetV2_model")
 HF_MODEL_FILE = os.getenv(
     "HF_MODEL_FILE",
-    "Fusion-ResNet50-EfficientNetV2_model.keras"
+    "Fusion-ResNet50-EfficientNetV2_model.tflite"
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -154,6 +154,68 @@ def load_prediction_model(model_path):
         "Policy": _CompatDTypePolicy,
     }
 
+    # If the model is a TFLite file, load it with the TFLite Interpreter and
+    # wrap it with a small `predict()` compatibility method used by routes.
+    if model_path.lower().endswith('.tflite'):
+        try:
+            class TFLiteModel:
+                def __init__(self, path):
+                    try:
+                        self.interpreter = tf.lite.Interpreter(model_path=path)
+                    except Exception:
+                        # Fallback to tflite_runtime if available (smaller installs)
+                        from tflite_runtime.interpreter import Interpreter
+
+                        self.interpreter = Interpreter(model_path=path)
+                    self.interpreter.allocate_tensors()
+                    self.input_details = self.interpreter.get_input_details()
+                    self.output_details = self.interpreter.get_output_details()
+
+                def predict(self, x):
+                    # Accept numpy array with batch dim. Return probabilities.
+                    x = np.asarray(x)
+                    # Handle single-sample input
+                    if x.ndim == 3:
+                        x = np.expand_dims(x, 0)
+
+                    # Prepare input according to interpreter input dtype
+                    input_dtype = self.input_details[0]['dtype']
+                    inp = x.astype(input_dtype)
+
+                    # If interpreter expects float and values look like 0-255, scale
+                    if np.issubdtype(input_dtype, np.floating):
+                        if inp.max() > 2.0:
+                            inp = inp / 255.0
+
+                    # Support quantized models with scale/zero_point
+                    for i, detail in enumerate(self.input_details):
+                        self.interpreter.set_tensor(detail['index'], inp.astype(detail['dtype']))
+
+                    self.interpreter.invoke()
+
+                    outputs = []
+                    for detail in self.output_details:
+                        out = self.interpreter.get_tensor(detail['index'])
+                        # dequantize if needed
+                        if 'quantization' in detail and detail['quantization'] != (0.0, 0):
+                            scale, zero_point = detail['quantization']
+                            out = scale * (out.astype(np.float32) - zero_point)
+                        outputs.append(out)
+
+                    # If single output, return as (batch, classes)
+                    if len(outputs) == 1:
+                        return outputs[0]
+                    # else concatenate along last axis
+                    return np.concatenate(outputs, axis=-1)
+
+            model = TFLiteModel(model_path)
+            print("[INFO] TFLite model loaded.")
+            return model
+        except Exception as e:
+            print("[ERROR] Failed loading TFLite model:", e)
+            return None
+
+    # Otherwise attempt to load as a Keras / TF SavedModel
     try:
         model = tf.keras.models.load_model(model_path, compile=False)
         print("[INFO] Model loaded normally.")
@@ -209,6 +271,7 @@ class_names = [
 ]
 
 app.config["MODEL"] = model
+app.config["MODEL_PATH"] = MODEL_PATH
 app.config["CLASS_NAMES"] = class_names
 app.config["UPLOAD_DIR"] = UPLOAD_DIR
 app.config["ALLOWED_EXTENSIONS"] = ALLOWED_EXTENSIONS
