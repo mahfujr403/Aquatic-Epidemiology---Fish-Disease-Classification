@@ -120,6 +120,7 @@ Thumbs.db
 
 # ML Model files (if storing locally, uncomment as needed)
 models/*.h5
+models/*.keras
 models/*.pkl
 models/*.joblib
 

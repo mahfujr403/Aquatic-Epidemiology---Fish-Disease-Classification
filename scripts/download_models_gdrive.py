@@ -78,10 +78,10 @@ def download_models():
     if not mapping:
         default_drive = os.environ.get(
             "MODEL_DRIVE_DEFAULT",
-            "1CWWdr3l6J4rt7BJn3jtoeYbCyFtteJDV"
+            "1FTU0VRCcwOLB6JewzxChamurzs6NgtqV"
         )
         mapping = {
-            "ensemble-ResNet50-EfficientNetV2_model.h5": extract_drive_id(default_drive)
+            "models/Fusion-ResNet50-EfficientNetV2_model.keras": extract_drive_id(default_drive)
         }
         print("⚠️ Using default MODEL_DRIVE_DEFAULT mapping")
 
