@@ -162,7 +162,7 @@ def _load_prediction_model(model_path):
 
 # MODEL_PATH = "models/ensemble-ResNet50-EfficientNetV2_model.h5"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "models", "ensemble-ResNet50-EfficientNetV2_model.h5")
+MODEL_PATH = os.path.join(BASE_DIR, "models", "Fusion-ResNet50-EfficientNetV2_model.keras")
 model = _load_prediction_model(MODEL_PATH)
 
 

@@ -81,7 +81,7 @@ def download_models():
             "1FTU0VRCcwOLB6JewzxChamurzs6NgtqV"
         )
         mapping = {
-            "models/Fusion-ResNet50-EfficientNetV2_model.keras": extract_drive_id(default_drive)
+            "Fusion-ResNet50-EfficientNetV2_model.keras": extract_drive_id(default_drive)
         }
         print("⚠️ Using default MODEL_DRIVE_DEFAULT mapping")
 
