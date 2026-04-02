@@ -14,3 +14,4 @@ python-dotenv>=1.0
 cloudinary>=1.32.0
 gdown>=4.6.4
 gunicorn==20.1.0
+huggingface_hub==1.8.0

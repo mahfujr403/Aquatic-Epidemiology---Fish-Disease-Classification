@@ -123,6 +123,10 @@ models/*.h5
 models/*.keras
 models/*.pkl
 models/*.joblib
+models/*.pt
+models/*.pth
+models/*.onnx
+models/*
 
 # Temporary files
 *.tmp
