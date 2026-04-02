@@ -26,7 +26,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 from keras.utils import custom_object_scope
-from keras.models import load_model
+import tensorflow as tf
 import numpy as np
 
 # App setup
@@ -130,7 +130,7 @@ def _load_prediction_model(model_path):
     }
 
     try:
-        return load_model(model_path, custom_objects=custom_objects, compile=False)
+        return tf.keras.models.load_model(MODEL_PATH, compile=False)
     except Exception as primary_exc:
         try:
             import h5py
