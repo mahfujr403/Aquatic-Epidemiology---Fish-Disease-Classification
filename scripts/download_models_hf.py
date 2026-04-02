@@ -4,8 +4,8 @@ from huggingface_hub import hf_hub_download
 
 from app import HF_MODEL_FILE, HF_MODEL_ID
 
-MODEL_REPO = "YOUR_USERNAME/fish-disease-model"
-MODEL_FILE = "final_model.keras"
+MODEL_REPO = "mahfujr403/Fusion-ResNet50-EfficientNetV2_model"
+MODEL_FILE = "Fusion-ResNet50-EfficientNetV2_model.keras"
 
 def load_model_from_hf():
     print("⬇️ Downloading model from HuggingFace...")

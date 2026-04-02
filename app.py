@@ -61,7 +61,7 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 # ----------------------------
 # Hugging Face Model Config
 # ----------------------------
-HF_MODEL_ID = os.getenv("HF_MODEL_ID", "your-username/your-model-repo")
+HF_MODEL_ID = os.getenv("HF_MODEL_ID", "mahfujr403/Fusion-ResNet50-EfficientNetV2_model")
 HF_MODEL_FILE = os.getenv(
     "HF_MODEL_FILE",
     "Fusion-ResNet50-EfficientNetV2_model.keras"
