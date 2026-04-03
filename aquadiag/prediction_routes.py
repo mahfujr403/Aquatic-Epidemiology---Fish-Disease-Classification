@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
+
+from app import get_model
 from . import db
 from . import models
 import os
@@ -62,11 +64,12 @@ def predict_disease():
         img_array = img_to_array(pil_img)
         img_array = np.expand_dims(img_array, axis=0)
 
-        model = current_app.config.get('MODEL')
-        if model is None:
-            flash('Model not available on server.', 'error')
-            return redirect(url_for('pred.predict_get'))
+        model = current_app.config.get("MODEL")
 
+        if model is None:
+            model = get_model()
+            current_app.config["MODEL"] = model
+            
         prediction = model.predict(img_array)[0]
         class_names = current_app.config.get('CLASS_NAMES', [])
 

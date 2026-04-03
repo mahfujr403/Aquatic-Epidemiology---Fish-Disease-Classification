@@ -12,7 +12,6 @@ load_dotenv()
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
-import tensorflow as tf
 import numpy as np
 
 from huggingface_hub import hf_hub_download
@@ -99,164 +98,61 @@ def download_model_from_hf():
 
 
 # ----------------------------
-# Keras compatibility (important for HF / Render)
-# ----------------------------
-from keras.layers import InputLayer as _InputLayer
-from keras.mixed_precision import Policy as _Policy
-
-
-class _CompatInputLayer(_InputLayer):
-    def __init__(self, *args, **kwargs):
-        if "batch_shape" in kwargs:
-            kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
-        super().__init__(*args, **kwargs)
-
-    @classmethod
-    def from_config(cls, config):
-        config = config.copy()
-        if "batch_shape" in config:
-            config["batch_input_shape"] = config.pop("batch_shape")
-        return super().from_config(config)
-
-
-class _CompatDTypePolicy(_Policy):
-    @classmethod
-    def from_config(cls, config):
-        if isinstance(config, dict):
-            return cls(config.get("name", "float32"))
-        return cls(config)
-
-
-def _sanitize_keras_config(value):
-    if isinstance(value, dict):
-        class_name = value.get("class_name")
-        config = value.get("config")
-        if class_name == "DTypePolicy" and isinstance(config, dict):
-            return config.get("name", "float32")
-        return {k: _sanitize_keras_config(v) for k, v in value.items()}
-
-    if isinstance(value, list):
-        return [_sanitize_keras_config(v) for v in value]
-
-    return value
-
-
-# ----------------------------
 # Load Model
 # ----------------------------
-def load_prediction_model(model_path):
-    if not os.path.exists(model_path):
-        return None
+def load_tflite_model(model_path):
+    from tflite_runtime.interpreter import Interpreter
 
-    custom_objects = {
-        "InputLayer": _CompatInputLayer,
-        "DTypePolicy": _CompatDTypePolicy,
-        "Policy": _CompatDTypePolicy,
-    }
+    class TFLiteModel:
+        def __init__(self, path):
+            self.interpreter = Interpreter(model_path=path)
+            self.interpreter.allocate_tensors()
 
-    # If the model is a TFLite file, load it with the TFLite Interpreter and
-    # wrap it with a small `predict()` compatibility method used by routes.
-    if model_path.lower().endswith('.tflite'):
-        try:
-            class TFLiteModel:
-                def __init__(self, path):
-                    try:
-                        self.interpreter = tf.lite.Interpreter(model_path=path)
-                    except Exception:
-                        # Fallback to tflite_runtime if available (smaller installs)
-                        from tflite_runtime.interpreter import Interpreter
+            self.input_details = self.interpreter.get_input_details()
+            self.output_details = self.interpreter.get_output_details()
 
-                        self.interpreter = Interpreter(model_path=path)
-                    self.interpreter.allocate_tensors()
-                    self.input_details = self.interpreter.get_input_details()
-                    self.output_details = self.interpreter.get_output_details()
+        def predict(self, x):
+            import numpy as np
 
-                def predict(self, x):
-                    # Accept numpy array with batch dim. Return probabilities.
-                    x = np.asarray(x)
-                    # Handle single-sample input
-                    if x.ndim == 3:
-                        x = np.expand_dims(x, 0)
+            x = np.asarray(x)
 
-                    # Prepare input according to interpreter input dtype
-                    input_dtype = self.input_details[0]['dtype']
-                    inp = x.astype(input_dtype)
+            if x.ndim == 3:
+                x = np.expand_dims(x, 0)
 
-                    # If interpreter expects float and values look like 0-255, scale
-                    if np.issubdtype(input_dtype, np.floating):
-                        if inp.max() > 2.0:
-                            inp = inp / 255.0
+            input_dtype = self.input_details[0]['dtype']
+            x = x.astype(input_dtype)
 
-                    # Support quantized models with scale/zero_point
-                    for i, detail in enumerate(self.input_details):
-                        self.interpreter.set_tensor(detail['index'], inp.astype(detail['dtype']))
+            # normalize if needed
+            if np.issubdtype(input_dtype, np.floating):
+                if x.max() > 1:
+                    x = x / 255.0
 
-                    self.interpreter.invoke()
+            self.interpreter.set_tensor(
+                self.input_details[0]['index'], x
+            )
 
-                    outputs = []
-                    for detail in self.output_details:
-                        out = self.interpreter.get_tensor(detail['index'])
-                        # dequantize if needed
-                        if 'quantization' in detail and detail['quantization'] != (0.0, 0):
-                            scale, zero_point = detail['quantization']
-                            out = scale * (out.astype(np.float32) - zero_point)
-                        outputs.append(out)
+            self.interpreter.invoke()
 
-                    # If single output, return as (batch, classes)
-                    if len(outputs) == 1:
-                        return outputs[0]
-                    # else concatenate along last axis
-                    return np.concatenate(outputs, axis=-1)
+            output = self.interpreter.get_tensor(
+                self.output_details[0]['index']
+            )
 
-            model = TFLiteModel(model_path)
-            print("[INFO] TFLite model loaded.")
-            return model
-        except Exception as e:
-            print("[ERROR] Failed loading TFLite model:", e)
-            return None
+            return output
 
-    # Otherwise attempt to load as a Keras / TF SavedModel
-    try:
-        model = tf.keras.models.load_model(model_path, compile=False)
-        print("[INFO] Model loaded normally.")
-        return model
-
-    except Exception as e1:
-        print("[WARNING] Normal load failed:", e1)
-
-        try:
-            import h5py
-            from keras.models import model_from_json
-            from keras.utils import custom_object_scope
-
-            with h5py.File(model_path, "r") as f:
-                raw_config = f.attrs.get("model_config")
-
-            if isinstance(raw_config, bytes):
-                raw_config = raw_config.decode("utf-8")
-
-            config = json.loads(raw_config)
-            config = _sanitize_keras_config(config)
-
-            with custom_object_scope(custom_objects):
-                model = model_from_json(json.dumps(config))
-
-            model.load_weights(model_path)
-
-            print("[INFO] Model loaded via fallback method.")
-            return model
-
-        except Exception as e2:
-            print("[ERROR] Fallback failed:", e2)
-            return None
-
-
+    return TFLiteModel(model_path)
 # ----------------------------
 # Load HF model at startup
 # ----------------------------
 MODEL_PATH = download_model_from_hf()
-model = load_prediction_model(MODEL_PATH)
+model = None
 
+def get_model():
+    global model
+    if model is None:
+        print("[INFO] Loading TFLite model...")
+        model_path = download_model_from_hf()
+        model = load_tflite_model(model_path)
+    return model
 # ----------------------------
 # Classes
 # ----------------------------

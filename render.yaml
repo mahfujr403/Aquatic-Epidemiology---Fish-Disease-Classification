@@ -3,7 +3,7 @@ services:
     name: fish-disease-app
     env: python
     region: singapore
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python scripts/download_models_hf.py
     startCommand: gunicorn app:app
     plan: free
     runtime: python-3.11.9
