@@ -8,7 +8,7 @@ import os
 import uuid
 import math
 from sqlalchemy import func
-from keras.utils import load_img, img_to_array
+
 import numpy as np
 from io import BytesIO
 from PIL import Image
@@ -61,7 +61,7 @@ def predict_disease():
         # prepare image array for model prediction (in-memory)
         pil_img = Image.open(BytesIO(file_bytes)).convert('RGB')
         pil_img = pil_img.resize((224, 224))
-        img_array = img_to_array(pil_img)
+        img_array = np.array(pil_img, dtype=np.float32)
         img_array = np.expand_dims(img_array, axis=0)
 
         model = current_app.config.get("MODEL")
