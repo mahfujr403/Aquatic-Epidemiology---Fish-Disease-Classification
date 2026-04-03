@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 
-from app import get_model
+from aquadiag.model_loader import get_model
 from . import db
 from . import models
 import os
@@ -69,7 +69,7 @@ def predict_disease():
         if model is None:
             model = get_model()
             current_app.config["MODEL"] = model
-            
+
         prediction = model.predict(img_array)[0]
         class_names = current_app.config.get('CLASS_NAMES', [])
 
