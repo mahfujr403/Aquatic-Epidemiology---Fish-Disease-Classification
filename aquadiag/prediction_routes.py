@@ -60,16 +60,8 @@ def predict_disease():
 
         # prepare image array for model prediction (in-memory)
         pil_img = Image.open(BytesIO(file_bytes)).convert('RGB')
-        # use a high-quality resize to match training preprocessing
-        try:
-            resample = Image.Resampling.LANCZOS
-        except AttributeError:
-            resample = Image.LANCZOS
-        pil_img = pil_img.resize((224, 224), resample=resample)
-
-        # convert to numpy array, ensure float32 and normalize to [0,1]
-        img_array = np.array(pil_img)
-        img_array = img_array.astype(np.float32) / 255.0
+        pil_img = pil_img.resize((224, 224))
+        img_array = np.array(pil_img, dtype=np.float32)
         img_array = np.expand_dims(img_array, axis=0)
 
         model = current_app.config.get("MODEL")

@@ -60,36 +60,9 @@ def load_tflite_model(path):
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
 
-        def predict(self, x):
-            x = np.asarray(x)
-
-            # ensure batch dimension
-            if x.ndim == 3:
-                x = np.expand_dims(x, axis=0)
-
-            # dtype match
-            input_dtype = self.input_details[0]['dtype']
-            x = x.astype(input_dtype)
-
-            # normalize if float input
-            if np.issubdtype(input_dtype, np.floating):
-                if x.max() > 1:
-                    x = x / 255.0
-
-            # set input tensor
-            self.interpreter.set_tensor(
-                self.input_details[0]['index'], x
-            )
-
-            # run inference
-            self.interpreter.invoke()
-
-            # get output
-            output = self.interpreter.get_tensor(
-                self.output_details[0]['index']
-            )
-
-            return output
+        # Note: model loader only exposes the interpreter and tensor details.
+        # Inference is performed by the caller (prediction_routes) so that
+        # preprocessing and dtype/scaling remain under the route's control.
 
     return TFLiteModel(path)
 
