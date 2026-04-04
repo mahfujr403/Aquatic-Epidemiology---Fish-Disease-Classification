@@ -137,15 +137,15 @@ CLOUDINARY_*
 
 | Home                             | Prediction                          |
 | -------------------------------- | ----------------------------------- |
-| ![](assets/screenshots/home.png) | ![](assets/screenshots/predict.png) |
+| ![](./assets/screenshoots/home.png) | ![](./assets/screenshoots/predict.png) |
 
 | Feedback                             | History                             |
 | ---------------------------------- | ----------------------------------- |
-| ![](assets/screenshots/feedback.png) | ![](assets/screenshots/history.png) |  
+| ![](./assets/screenshoots/feedback.png) | ![](./assets/screenshoots/history.png) |  
 
 | Admin Pannel                         |
 | ---------------------------------- | 
-| ![](assets/screenshots/admin.png) | 
+| ![](./assets/screenshoots/admin.png) | 
 
 
 ---
