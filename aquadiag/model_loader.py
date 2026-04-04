@@ -60,9 +60,36 @@ def load_tflite_model(path):
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
 
-        # Note: model loader only exposes the interpreter and tensor details.
-        # Inference is performed by the caller (prediction_routes) so that
-        # preprocessing and dtype/scaling remain under the route's control.
+        # Provide a convenience predict() that runs inference on the
+        # TFLite interpreter. This implementation DOES NOT perform any
+        # normalization (no /255 scaling) so it matches the preprocessing
+        # used in `prediction_routes.py` (which passes raw floats in 0-255).
+        def predict(self, x):
+            x = np.asarray(x)
+
+            # ensure batch dimension
+            if x.ndim == 3:
+                x = np.expand_dims(x, axis=0)
+
+            input_dtype = self.input_details[0]['dtype']
+
+            # If model expects floating dtype, cast directly (no scaling).
+            if np.issubdtype(input_dtype, np.floating):
+                x_in = x.astype(input_dtype)
+            else:
+                # model expects integer (e.g., uint8). If caller provided
+                # floats in 0-255 range, round before casting.
+                if np.issubdtype(x.dtype, np.floating):
+                    x_in = np.rint(x).astype(input_dtype)
+                else:
+                    x_in = x.astype(input_dtype)
+
+            # set input tensor and invoke
+            self.interpreter.set_tensor(self.input_details[0]['index'], x_in)
+            self.interpreter.invoke()
+
+            output = self.interpreter.get_tensor(self.output_details[0]['index'])
+            return output
 
     return TFLiteModel(path)
 
