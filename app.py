@@ -31,9 +31,7 @@ database_url = os.getenv("DATABASE_URL", "sqlite:///app.db")
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-# Supabase direct connections require SSL
-if "supabase" in database_url and "sslmode" not in database_url:
-    database_url += "?sslmode=require"
+
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
