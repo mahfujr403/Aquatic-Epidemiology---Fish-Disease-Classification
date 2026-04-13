@@ -31,6 +31,10 @@ database_url = os.getenv("DATABASE_URL", "sqlite:///app.db")
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
+# Supabase direct connections require SSL
+if "supabase" in database_url and "sslmode" not in database_url:
+    database_url += "?sslmode=require"
+
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -171,6 +175,16 @@ app.config["MODEL_PATH"] = MODEL_PATH
 app.config["CLASS_NAMES"] = class_names
 app.config["UPLOAD_DIR"] = UPLOAD_DIR
 app.config["ALLOWED_EXTENSIONS"] = ALLOWED_EXTENSIONS
+
+
+ 
+# ----------------------------
+# Cloudinary config  ← FIX: was missing, causing uploads to always fall back to local
+# ----------------------------
+app.config["CLOUDINARY_CLOUD_NAME"] = os.getenv("CLOUDINARY_CLOUD_NAME")
+app.config["CLOUDINARY_API_KEY"]    = os.getenv("CLOUDINARY_API_KEY")
+app.config["CLOUDINARY_API_SECRET"] = os.getenv("CLOUDINARY_API_SECRET")
+app.config["CLOUDINARY_FOLDER"]     = os.getenv("CLOUDINARY_FOLDER", "aquadiag/uploads")
 
 # ----------------------------
 # Login manager
