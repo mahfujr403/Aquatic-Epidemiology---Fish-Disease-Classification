@@ -174,6 +174,10 @@ app.config["CLASS_NAMES"] = class_names
 app.config["UPLOAD_DIR"] = UPLOAD_DIR
 app.config["ALLOWED_EXTENSIONS"] = ALLOWED_EXTENSIONS
 
+# Prediction display config (can be overridden via env vars)
+app.config["CONFIDENCE_THRESHOLD"] = float(os.getenv("CONFIDENCE_THRESHOLD", "0.75"))
+app.config["UNKNOWN_LABEL"] = os.getenv("UNKNOWN_LABEL", "Unkown")
+
 
  
 # ----------------------------

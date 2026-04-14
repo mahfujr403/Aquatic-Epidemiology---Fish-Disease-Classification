@@ -77,6 +77,14 @@ def predict_disease():
         top_class = class_names[top_idx]
         top_confidence = float(prediction[top_idx])
 
+        # If confidence below threshold, show unknown label instead
+        threshold = current_app.config.get('CONFIDENCE_THRESHOLD')
+        unknown_label = current_app.config.get('UNKNOWN_LABEL')
+        if top_confidence < float(threshold):
+            display_class = unknown_label
+        else:
+            display_class = top_class
+
         # Build sorted all-predictions list for breakdown display
         all_predictions = sorted(
             [(class_names[i], float(prediction[i]) * 100) for i in range(len(class_names))],
@@ -97,7 +105,7 @@ def predict_disease():
                     cloudinary.config(cloud_name=str(cloudinary_cloud), api_key=str(cloudinary_key), api_secret=str(cloudinary_secret), secure=True)
                     current_app.logger.info('Attempting Cloudinary upload')
                     # upload bytes
-                    res = cloudinary.uploader.upload(BytesIO(file_bytes), folder=current_app.config.get('CLOUDINARY_FOLDER', 'aquadiag/uploads'), use_filename=True, unique_filename=False)
+                    res = cloudinary.uploader.upload(BytesIO(file_bytes), folder=current_app.config.get('CLOUDINARY_FOLDER', 'aquadiag/uploads'), use_filename=True, unique_filename=True)
                     image_url = res.get('secure_url')
                     current_app.logger.info(f'Cloudinary upload succeeded: {image_url}')
                 except Exception as exc:
@@ -119,7 +127,7 @@ def predict_disease():
             image_url = local_path.replace('\\', '/')
 
         pred_row = models.Prediction(
-            predicted_class=top_class,
+            predicted_class=display_class,
             confidence=top_confidence,
             model_used=os.path.basename(current_app.config.get('MODEL_PATH', '')),
             image_path=image_url,
@@ -131,7 +139,7 @@ def predict_disease():
         return render_template(
             'prediction.html',
             success=True,
-            disease=top_class,
+            disease=display_class,
             confidence=f"{top_confidence * 100:.2f}%",
             confidence_raw=top_confidence,          # raw float for JS animation
             all_predictions=all_predictions,        # list of (name, pct) for breakdown bars
