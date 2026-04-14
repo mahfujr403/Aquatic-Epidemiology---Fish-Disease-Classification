@@ -29,12 +29,14 @@ class Prediction(db.Model):
     predicted_class = db.Column(db.String(255), nullable=False)
     confidence = db.Column(db.Float, nullable=False)
     model_used = db.Column(db.String(255), nullable=False)
+    model_id = db.Column(db.Integer, db.ForeignKey("models.id"), nullable=True)
     image_path = db.Column(db.String(500), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     feedbacks = db.relationship("Feedback", backref="prediction", lazy=True)
     dataset_samples = db.relationship("DatasetSample", backref="prediction", lazy=True)
+    scores = db.relationship("PredictionScore", backref="prediction", lazy=True)
 
 
 class Feedback(db.Model):
@@ -68,3 +70,20 @@ class ModelRegistry(db.Model):
     version = db.Column(db.String(100), nullable=False)
     filename = db.Column(db.String(255), nullable=False, unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    predictions = db.relationship("Prediction", backref="model_entry", lazy=True)
+
+
+class ClassLabel(db.Model):
+    __tablename__ = "classes"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False, unique=True)
+
+
+class PredictionScore(db.Model):
+    __tablename__ = "prediction_scores"
+    id = db.Column(db.Integer, primary_key=True)
+    prediction_id = db.Column(db.Integer, db.ForeignKey("predictions.id"), nullable=False)
+    class_id = db.Column(db.Integer, db.ForeignKey("classes.id"), nullable=False)
+    score = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+

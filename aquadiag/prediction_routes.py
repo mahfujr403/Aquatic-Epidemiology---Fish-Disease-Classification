@@ -78,8 +78,8 @@ def predict_disease():
         top_confidence = float(prediction[top_idx])
 
         # If confidence below threshold, show unknown label instead
-        threshold = current_app.config.get('CONFIDENCE_THRESHOLD')
-        unknown_label = current_app.config.get('UNKNOWN_LABEL')
+        threshold = current_app.config.get('CONFIDENCE_THRESHOLD', 0.75)
+        unknown_label = current_app.config.get('UNKNOWN_LABEL', 'Unknown')
         if top_confidence < float(threshold):
             display_class = unknown_label
         else:
@@ -126,14 +126,51 @@ def predict_disease():
             # store path relative to server root for templates that expect '/path'
             image_url = local_path.replace('\\', '/')
 
+        # Link prediction to a model registry entry (create if missing)
+        model_filename = os.path.basename(current_app.config.get('MODEL_PATH', '') or '')
+        model_entry = None
+        if model_filename:
+            model_entry = models.ModelRegistry.query.filter_by(filename=model_filename).first()
+            if model_entry is None:
+                # create a minimal registry record
+                model_entry = models.ModelRegistry(
+                    name=model_filename,
+                    metrics=None,
+                    version='',
+                    filename=model_filename,
+                )
+                db.session.add(model_entry)
+                db.session.flush()  # ensure id is available
+
         pred_row = models.Prediction(
             predicted_class=display_class,
             confidence=top_confidence,
-            model_used=os.path.basename(current_app.config.get('MODEL_PATH', '')),
+            model_used=model_filename or os.path.basename(current_app.config.get('MODEL_PATH', '')),
+            model_id=(model_entry.id if model_entry is not None else None),
             image_path=image_url,
             user_id=current_user.id,
         )
+
+        # persist prediction and per-class scores (normalized in separate table)
         db.session.add(pred_row)
+        db.session.flush()  # assign pred_row.id
+
+        # ensure class label rows exist and insert prediction_scores
+        class_map = {c.name: c.id for c in models.ClassLabel.query.all()}
+        score_rows = []
+        for i, cname in enumerate(class_names):
+            cid = class_map.get(cname)
+            if cid is None:
+                cl = models.ClassLabel(name=cname)
+                db.session.add(cl)
+                db.session.flush()
+                cid = cl.id
+                class_map[cname] = cid
+
+            score = float(prediction[i])
+            score_rows.append(models.PredictionScore(prediction_id=pred_row.id, class_id=cid, score=score))
+
+        db.session.bulk_save_objects(score_rows)
         db.session.commit()
 
         return render_template(
