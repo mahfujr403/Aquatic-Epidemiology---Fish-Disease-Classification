@@ -51,12 +51,6 @@ app.register_blueprint(pred_bp)
 app.register_blueprint(admin_bp)
 
 # ----------------------------
-# Activity logger (non-blocking)
-# ----------------------------
-from aquadiag.activity_logger import init_activity_logger
-init_activity_logger(app)
-
-# ----------------------------
 # Upload config
 # ----------------------------
 UPLOAD_DIR = os.path.join("static", "uploads")
