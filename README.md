@@ -44,6 +44,15 @@ The system is optimized for **low-memory cloud deployment** using **TFLite infer
 
 ---
 
+
+## 📥 Sample Dataset
+
+You can browse and download example images from this Kaggle dataset (download any image and try the app) or you can try with your own image:
+
+https://www.kaggle.com/datasets/subirbiswas19/freshwater-fish-disease-aquaculture-in-south-asia
+
+---
+
 ## 🧠 Model Contribution
 
 * Custom-trained deep learning model
