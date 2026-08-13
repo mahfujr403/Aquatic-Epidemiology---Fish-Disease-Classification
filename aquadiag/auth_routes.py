@@ -88,7 +88,7 @@ def register():
 def login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '').strip()
+        password = request.form.get('password', '')
 
         user = User.query.filter_by(email=email).first()
         if not user or not user.check_password(password):
