@@ -115,7 +115,7 @@ def logout():
 def admin_login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '').strip()
+        password = request.form.get('password', '')
 
         admin_email = None
         admin_password = None
