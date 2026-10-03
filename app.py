@@ -35,6 +35,15 @@ if database_url.startswith("postgres://"):
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Database Connection Pool Options:
+# Prevents "Internal Server Error" after idle time (stale / closed connections).
+# pool_pre_ping tests connection before using it and reconnects automatically if dropped.
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
+    "pool_timeout": 20,
+}
+
 from aquadiag import db, login_manager
 
 db.init_app(app)
@@ -377,6 +386,11 @@ def admin_panel_alias():
 @login_required
 def predict_get():
     return render_template("prediction.html", class_names=class_names)
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
 
 
 # ----------------------------
