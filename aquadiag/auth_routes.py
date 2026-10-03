@@ -133,6 +133,9 @@ def logout():
 
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
+    demo_admin_email = 'admin@demo.com'
+    demo_admin_password = 'AdminDemo123!'
+
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
@@ -146,14 +149,28 @@ def admin_login():
         except Exception:
             pass
 
-        if admin_email and admin_password and email == admin_email and password == admin_password:
+        is_demo_admin = (email == demo_admin_email and password == demo_admin_password)
+        is_env_admin = bool(admin_email and admin_password and email == admin_email and password == admin_password)
+
+        if is_demo_admin or is_env_admin:
             user = User.query.filter_by(email=email).first()
             if not user:
-                username = os.getenv('ADMIN_USERNAME') or email.split('@')[0]
+                username = 'DemoAdmin' if is_demo_admin else (os.getenv('ADMIN_USERNAME') or email.split('@')[0])
                 user = User(email=email, username=username, role='admin')
                 user.set_password(password)
                 db.session.add(user)
-                db.session.commit()
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    user = User.query.filter_by(email=email).first()
+            elif user.role != 'admin' or not user.check_password(password):
+                try:
+                    user.role = 'admin'
+                    user.set_password(password)
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
 
             from flask_login import login_user
             login_user(user)
@@ -163,4 +180,4 @@ def admin_login():
         flash('Invalid admin credentials.', 'error')
         return redirect(url_for('auth.admin_login'))
 
-    return render_template('admin_login.html')
+    return render_template('admin_login.html', demo_admin_email=demo_admin_email, demo_admin_password=demo_admin_password)

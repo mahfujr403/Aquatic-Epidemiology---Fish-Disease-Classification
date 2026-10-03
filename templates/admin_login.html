@@ -225,6 +225,31 @@
             </svg>
             Authenticate Access
           </button>
+
+          <!-- Recruiter / Demo Admin Access -->
+          <div class="demo-admin-box" id="demoAdminBox">
+            <div class="demo-admin-header">
+              <span class="demo-admin-badge">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Recruiter / Demo Admin Access
+              </span>
+              <button type="button" class="btn-demo-admin-fill" id="btnAdminAutoFill" title="Auto-fill demo admin credentials">
+                Auto Fill & Explore
+              </button>
+            </div>
+            <div class="demo-admin-creds">
+              <div class="demo-admin-row">
+                <span class="demo-admin-lbl">Admin Email:</span>
+                <code class="demo-admin-val" id="demoAdminEmailVal">{{ demo_admin_email or 'admin@demo.com' }}</code>
+              </div>
+              <div class="demo-admin-row">
+                <span class="demo-admin-lbl">Password:</span>
+                <code class="demo-admin-val" id="demoAdminPassVal">{{ demo_admin_password or 'AdminDemo123!' }}</code>
+              </div>
+            </div>
+          </div>
         </form>
 
         <div class="sec-warning">

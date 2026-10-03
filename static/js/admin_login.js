@@ -55,3 +55,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el) el.addEventListener('click', () => modal.remove());
     });
 });
+
+// Auto-fill recruiter demo admin credentials
+const autoFillAdminBtn = document.getElementById('btnAdminAutoFill');
+if (autoFillAdminBtn) {
+    autoFillAdminBtn.addEventListener('click', () => {
+        const emailEl = document.getElementById('email');
+        const passEl = document.getElementById('password');
+        const demoEmail = document.getElementById('demoAdminEmailVal')?.innerText.trim() || 'admin@demo.com';
+        const demoPass = document.getElementById('demoAdminPassVal')?.innerText.trim() || 'AdminDemo123!';
+
+        if (emailEl && passEl) {
+            emailEl.value = demoEmail;
+            passEl.value = demoPass;
+            emailEl.focus();
+            autoFillAdminBtn.innerText = 'Filled! ✓';
+            setTimeout(() => {
+                autoFillAdminBtn.innerText = 'Auto Fill & Explore';
+            }, 2000);
+        }
+    });
+}
