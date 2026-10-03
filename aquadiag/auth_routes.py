@@ -1,10 +1,17 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from sqlalchemy.exc import IntegrityError
 from . import db
+import os
 import re
 from .models import User
 from functools import wraps
 from flask_login import current_user
+
+RECRUITER_DEMO_EMAIL = os.getenv('RECRUITER_DEMO_EMAIL', 'recruiter@demo.com')
+RECRUITER_DEMO_KEY = os.getenv('RECRUITER_DEMO_KEY', 'DemoUser123!')
+
+ADMIN_DEMO_EMAIL = os.getenv('ADMIN_DEMO_EMAIL', 'admin@demo.com')
+ADMIN_DEMO_KEY = os.getenv('ADMIN_DEMO_KEY', 'AdminDemo123!')
 
 
 def admin_required(fn):
@@ -84,34 +91,40 @@ def register():
     return render_template('register.html', errors={}, form_data={})
 
 
+def _ensure_recruiter_account(email, candidate_key):
+    if email != RECRUITER_DEMO_EMAIL or candidate_key != RECRUITER_DEMO_KEY:
+        return
+    demo_user = User.query.filter_by(email=RECRUITER_DEMO_EMAIL).first()
+    if not demo_user:
+        try:
+            demo_user = User(
+                email=RECRUITER_DEMO_EMAIL,
+                username='RecruiterGuest',
+                role='user'
+            )
+            demo_user.set_password(candidate_key)
+            db.session.add(demo_user)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+    elif not demo_user.check_password(candidate_key):
+        try:
+            demo_user.set_password(candidate_key)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    demo_email = 'recruiter@demo.com'
-    demo_password = 'DemoUser123!'
-
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
+        key = request.form.get('password', '')
 
-        # Auto-create/ensure demo recruiter account exists
-        if email == demo_email and password == demo_password:
-            demo_user = User.query.filter_by(email=demo_email).first()
-            if not demo_user:
-                try:
-                    demo_user = User(
-                        email=demo_email,
-                        username='RecruiterGuest',
-                        role='user'
-                    )
-                    demo_user.set_password(demo_password)
-                    db.session.add(demo_user)
-                    db.session.commit()
-                except Exception:
-                    db.session.rollback()
-                    demo_user = User.query.filter_by(email=demo_email).first()
+        _ensure_recruiter_account(email, key)
 
         user = User.query.filter_by(email=email).first()
-        if not user or not user.check_password(password):
+        if not user or not user.check_password(key):
             flash('Invalid email or password.', 'error')
             return redirect(url_for('auth.login'))
 
@@ -120,7 +133,11 @@ def login():
         flash('Logged in successfully.', 'success')
         return redirect(url_for('pred.predict_get'))
 
-    return render_template('login.html', demo_email=demo_email, demo_password=demo_password)
+    return render_template(
+        'login.html',
+        demo_email=RECRUITER_DEMO_EMAIL,
+        demo_password=RECRUITER_DEMO_KEY
+    )
 
 
 @auth_bp.route('/logout')
@@ -131,53 +148,58 @@ def logout():
     return redirect(url_for('index', logged_out=1))
 
 
+def _authenticate_admin(email, candidate_key):
+    env_email = os.getenv('ADMIN_EMAIL')
+    env_pass = os.getenv('ADMIN_PASSWORD')
+
+    is_demo = (email == ADMIN_DEMO_EMAIL and candidate_key == ADMIN_DEMO_KEY)
+    is_env = bool(env_email and env_pass and email == env_email and candidate_key == env_pass)
+
+    if not (is_demo or is_env):
+        return None
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        uname = 'DemoAdmin' if is_demo else (os.getenv('ADMIN_USERNAME') or email.split('@')[0])
+        user = User(email=email, username=uname, role='admin')
+        user.set_password(candidate_key)
+        db.session.add(user)
+        try:
+            db.session.commit()
+            return user
+        except Exception:
+            db.session.rollback()
+            return User.query.filter_by(email=email).first()
+
+    if user.role != 'admin' or not user.check_password(candidate_key):
+        try:
+            user.role = 'admin'
+            user.set_password(candidate_key)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    return user
+
+
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
-    demo_admin_email = 'admin@demo.com'
-    demo_admin_password = 'AdminDemo123!'
-
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
+        key = request.form.get('password', '')
 
-        admin_email = None
-        admin_password = None
-        try:
-            import os
-            admin_email = os.getenv('ADMIN_EMAIL')
-            admin_password = os.getenv('ADMIN_PASSWORD')
-        except Exception:
-            pass
+        user = _authenticate_admin(email, key)
+        if not user:
+            flash('Invalid admin credentials.', 'error')
+            return redirect(url_for('auth.admin_login'))
 
-        is_demo_admin = (email == demo_admin_email and password == demo_admin_password)
-        is_env_admin = bool(admin_email and admin_password and email == admin_email and password == admin_password)
+        from flask_login import login_user
+        login_user(user)
+        flash('Admin logged in successfully.', 'success')
+        return redirect(url_for('admin.admin_panel'))
 
-        if is_demo_admin or is_env_admin:
-            user = User.query.filter_by(email=email).first()
-            if not user:
-                username = 'DemoAdmin' if is_demo_admin else (os.getenv('ADMIN_USERNAME') or email.split('@')[0])
-                user = User(email=email, username=username, role='admin')
-                user.set_password(password)
-                db.session.add(user)
-                try:
-                    db.session.commit()
-                except Exception:
-                    db.session.rollback()
-                    user = User.query.filter_by(email=email).first()
-            elif user.role != 'admin' or not user.check_password(password):
-                try:
-                    user.role = 'admin'
-                    user.set_password(password)
-                    db.session.commit()
-                except Exception:
-                    db.session.rollback()
-
-            from flask_login import login_user
-            login_user(user)
-            flash('Admin logged in successfully.', 'success')
-            return redirect(url_for('admin.admin_panel'))
-
-        flash('Invalid admin credentials.', 'error')
-        return redirect(url_for('auth.admin_login'))
-
-    return render_template('admin_login.html', demo_admin_email=demo_admin_email, demo_admin_password=demo_admin_password)
+    return render_template(
+        'admin_login.html',
+        demo_admin_email=ADMIN_DEMO_EMAIL,
+        demo_admin_password=ADMIN_DEMO_KEY
+    )
