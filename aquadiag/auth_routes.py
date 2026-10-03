@@ -86,9 +86,29 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    demo_email = 'recruiter@demo.com'
+    demo_password = 'DemoUser123!'
+
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
+
+        # Auto-create/ensure demo recruiter account exists
+        if email == demo_email and password == demo_password:
+            demo_user = User.query.filter_by(email=demo_email).first()
+            if not demo_user:
+                try:
+                    demo_user = User(
+                        email=demo_email,
+                        username='RecruiterGuest',
+                        role='user'
+                    )
+                    demo_user.set_password(demo_password)
+                    db.session.add(demo_user)
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    demo_user = User.query.filter_by(email=demo_email).first()
 
         user = User.query.filter_by(email=email).first()
         if not user or not user.check_password(password):
@@ -100,7 +120,7 @@ def login():
         flash('Logged in successfully.', 'success')
         return redirect(url_for('pred.predict_get'))
 
-    return render_template('login.html')
+    return render_template('login.html', demo_email=demo_email, demo_password=demo_password)
 
 
 @auth_bp.route('/logout')

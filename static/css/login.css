@@ -556,3 +556,85 @@ body::before {
         font-size: 1.7rem;
     }
 }
+
+/* ── Recruiter Demo Access Box ── */
+.demo-box {
+    margin-top: 20px;
+    background: rgba(0, 201, 167, 0.04);
+    border: 1px dashed rgba(0, 201, 167, 0.35);
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: all 0.25s ease;
+}
+
+.demo-box:hover {
+    background: rgba(0, 201, 167, 0.07);
+    border-color: rgba(0, 201, 167, 0.55);
+}
+
+.demo-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+}
+
+.demo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--teal);
+}
+
+.btn-demo-fill {
+    background: rgba(0, 201, 167, 0.12);
+    border: 1px solid rgba(0, 201, 167, 0.3);
+    color: var(--white);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-demo-fill:hover {
+    background: var(--teal);
+    color: var(--deep);
+    border-color: var(--teal);
+    box-shadow: 0 0 12px rgba(0, 201, 167, 0.35);
+}
+
+.demo-creds {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.demo-cred-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+.demo-label {
+    font-weight: 500;
+}
+
+.demo-value {
+    background: rgba(7, 16, 32, 0.7);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e0f2fe;
+    font-family: monospace;
+    font-size: 0.82rem;
+    user-select: all;
+}

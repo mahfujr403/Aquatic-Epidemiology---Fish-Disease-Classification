@@ -38,11 +38,32 @@
   // Show flash modal if present
   document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('flashModal');
-    if (!modal) return;
-    // open modal
-    modal.classList.add('open');
-    // close handlers
-    modal.querySelectorAll('[data-action="close"]').forEach(el => el.addEventListener('click', () => modal.remove()));
-    const closeBtn = modal.querySelector('.modal-close');
-    if (closeBtn) closeBtn.addEventListener('click', () => modal.remove());
+    if (modal) {
+      modal.classList.add('open');
+      modal.querySelectorAll('[data-action="close"]').forEach(el => el.addEventListener('click', () => modal.remove()));
+      const closeBtn = modal.querySelector('.modal-close');
+      if (closeBtn) closeBtn.addEventListener('click', () => modal.remove());
+    }
+
+    // Auto-fill recruiter demo credentials
+    const autoFillBtn = document.getElementById('btnAutoFill');
+    if (autoFillBtn) {
+      autoFillBtn.addEventListener('click', () => {
+        const emailEl = document.getElementById('email');
+        const passEl = document.getElementById('password');
+        const demoEmail = document.getElementById('demoEmailVal')?.innerText.trim() || 'recruiter@demo.com';
+        const demoPass  = document.getElementById('demoPassVal')?.innerText.trim() || 'DemoUser123!';
+
+        if (emailEl && passEl) {
+          emailEl.value = demoEmail;
+          passEl.value = demoPass;
+          // Trigger visual indication
+          emailEl.focus();
+          autoFillBtn.innerText = 'Filled! ✓';
+          setTimeout(() => {
+            autoFillBtn.innerText = 'Auto Fill & Explore';
+          }, 2000);
+        }
+      });
+    }
   });
